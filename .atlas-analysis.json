@@ -1,0 +1,200 @@
+{
+  "projectType": "sdk-library",
+  "projectName": "Motion",
+  "projectDescription": "A modern animation library for React, JavaScript and Vue with springs, gestures, and layout transitions.",
+  "theme": "palm",
+  "primaryColor": "#FF2B6E",
+  "lightColor": "#FF4FBA",
+  "darkColor": "#8D30FF",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/animation-basics",
+              "concepts/motion-values",
+              "concepts/animation-controls",
+              "concepts/variants",
+              "concepts/gestures"
+            ]
+          },
+          {
+            "group": "React",
+            "pages": [
+              "react/overview",
+              "react/motion-components",
+              "react/animate-presence",
+              "react/layout-animations",
+              "react/hooks"
+            ]
+          },
+          {
+            "group": "JavaScript",
+            "pages": [
+              "javascript/overview",
+              "javascript/animate",
+              "javascript/scroll",
+              "javascript/inview",
+              "javascript/timeline"
+            ]
+          },
+          {
+            "group": "Vue",
+            "pages": [
+              "vue/overview",
+              "vue/getting-started"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/spring-animations",
+              "guides/keyframe-animations",
+              "guides/scroll-animations",
+              "guides/drag-interactions",
+              "guides/layout-transitions",
+              "guides/performance",
+              "guides/accessibility"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Components",
+            "pages": [
+              "api/motion",
+              "api/animate-presence",
+              "api/layout-group",
+              "api/motion-config",
+              "api/lazy-motion",
+              "api/reorder"
+            ]
+          },
+          {
+            "group": "Animation",
+            "pages": [
+              "api/animate",
+              "api/animation-controls",
+              "api/use-animate",
+              "api/use-animation",
+              "api/animate-visual-element"
+            ]
+          },
+          {
+            "group": "Motion Values",
+            "pages": [
+              "api/use-motion-value",
+              "api/use-transform",
+              "api/use-spring",
+              "api/use-velocity",
+              "api/motion-value"
+            ]
+          },
+          {
+            "group": "Gestures",
+            "pages": [
+              "api/drag",
+              "api/hover",
+              "api/tap",
+              "api/pan",
+              "api/focus"
+            ]
+          },
+          {
+            "group": "Scroll",
+            "pages": [
+              "api/use-scroll",
+              "api/scroll",
+              "api/use-in-view",
+              "api/inview"
+            ]
+          },
+          {
+            "group": "Layout",
+            "pages": [
+              "api/layout-animations",
+              "api/shared-layout",
+              "api/use-presence"
+            ]
+          },
+          {
+            "group": "Utilities",
+            "pages": [
+              "api/use-reduced-motion",
+              "api/use-time",
+              "api/use-will-change",
+              "api/transform",
+              "api/interpolate"
+            ]
+          },
+          {
+            "group": "Types",
+            "pages": [
+              "api/types/motion-props",
+              "api/types/animation-options",
+              "api/types/transition",
+              "api/types/variants"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Declarative React animation with motion components",
+    "Imperative JavaScript animate() API",
+    "Spring and keyframe animations",
+    "Drag, hover, and gesture handlers",
+    "Layout and shared layout animations",
+    "Scroll-linked animations and triggers",
+    "AnimatePresence for exit animations",
+    "Motion values for reactive animations",
+    "WAAPI-powered GPU acceleration",
+    "TypeScript support with full type definitions"
+  ],
+  "publicApiSurface": [
+    "motion (React component)",
+    "m (minimal React component)",
+    "animate()",
+    "AnimatePresence",
+    "LayoutGroup",
+    "MotionConfig",
+    "LazyMotion",
+    "Reorder",
+    "useAnimate()",
+    "useAnimation()",
+    "useAnimationControls()",
+    "useMotionValue()",
+    "useTransform()",
+    "useSpring()",
+    "useScroll()",
+    "useInView()",
+    "useVelocity()",
+    "useTime()",
+    "usePresence()",
+    "useReducedMotion()",
+    "useDragControls()",
+    "scroll()",
+    "inView()",
+    "stagger()",
+    "spring()",
+    "timeline()",
+    "MotionValue",
+    "AnimationControls",
+    "DragControls"
+  ]
+}
