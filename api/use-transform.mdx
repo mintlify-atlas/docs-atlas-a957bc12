@@ -1,0 +1,258 @@
+---
+title: useTransform
+description: Transform the output of one or more MotionValues
+---
+
+## Overview
+
+Create a `MotionValue` that transforms the output of another `MotionValue` by mapping it from one range of values into another, or by applying a custom function.
+
+## Import
+
+```jsx
+import { useTransform } from "motion/react"
+```
+
+## Signatures
+
+### Range Mapping
+
+```typescript
+function useTransform<I, O>(
+  value: MotionValue<number>,
+  inputRange: number[],
+  outputRange: O[],
+  options?: TransformOptions<O>
+): MotionValue<O>
+```
+
+### Transform Function
+
+```typescript
+function useTransform<I, O>(
+  input: MotionValue<I>,
+  transformer: (input: I) => O
+): MotionValue<O>
+```
+
+### Multiple Inputs
+
+```typescript
+function useTransform<I, O>(
+  input: MotionValue[],
+  transformer: (inputs: I[]) => O
+): MotionValue<O>
+```
+
+### Multiple Outputs (Map)
+
+```typescript
+function useTransform<T extends Record<string, any[]>>(
+  inputValue: MotionValue<number>,
+  inputRange: number[],
+  outputMap: T,
+  options?: TransformOptions<T[keyof T][number]>
+): { [K in keyof T]: MotionValue<T[K][number]> }
+```
+
+## Parameters
+
+### Range Mapping Parameters
+
+<ParamField path="value" type="MotionValue<number>" required>
+  The input `MotionValue` to transform
+</ParamField>
+
+<ParamField path="inputRange" type="number[]" required>
+  A linear series of numbers (either all increasing or decreasing)
+</ParamField>
+
+<ParamField path="outputRange" type="O[]" required>
+  A series of values to map to. Must be the same length as `inputRange`. Can be numbers, colors, strings, or other animatable values
+</ParamField>
+
+<ParamField path="options" type="TransformOptions<O>">
+  Optional transform configuration:
+  - `clamp`: Clamp values to within the given range (default: `true`)
+  - `ease`: Easing function(s) to apply between values
+  - `mixer`: Custom interpolation function
+</ParamField>
+
+### Function Transform Parameters
+
+<ParamField path="input" type="MotionValue<I> or MotionValue[]" required>
+  The input `MotionValue`(s) to transform
+</ParamField>
+
+<ParamField path="transformer" type="(input: I) => O" required>
+  A function that accepts the latest value(s) and returns a new value
+</ParamField>
+
+## Usage
+
+### Basic Range Mapping
+
+Map input values to output values:
+
+```jsx
+import { motion, useMotionValue, useTransform } from "motion/react"
+
+export function Component() {
+  const x = useMotionValue(0)
+  const opacity = useTransform(x, [-200, 0, 200], [0, 1, 0])
+
+  return (
+    <motion.div
+      style={{ x, opacity }}
+      drag="x"
+    />
+  )
+}
+```
+
+### Complex Range Mapping
+
+Transform with multiple breakpoints:
+
+```jsx
+import { motion, useMotionValue, useTransform } from "motion/react"
+
+export function Component() {
+  const x = useMotionValue(0)
+  const xRange = [-200, -100, 100, 200]
+  const opacityRange = [0, 1, 1, 0]
+  const opacity = useTransform(x, xRange, opacityRange)
+
+  return (
+    <motion.div
+      animate={{ x: 200 }}
+      style={{ opacity, x }}
+    />
+  )
+}
+```
+
+### Transform Function
+
+Apply custom transformation logic:
+
+```jsx
+import { motion, useMotionValue, useTransform } from "motion/react"
+
+export function Component() {
+  const x = useMotionValue(10)
+  const y = useTransform(x, (value) => value * 2)
+
+  return <motion.div style={{ x, y }} />
+}
+```
+
+### Multiple Input Values
+
+Combine multiple motion values:
+
+```jsx
+import { motion, useMotionValue, useTransform } from "motion/react"
+
+export function Component() {
+  const x = useMotionValue(0)
+  const y = useMotionValue(0)
+  const z = useTransform([x, y], ([latestX, latestY]) => {
+    return latestX * latestY
+  })
+
+  return <motion.div style={{ x, y, z }} />
+}
+```
+
+### Color Transformations
+
+Transform between colors:
+
+```jsx
+import { motion, useMotionValue, useTransform } from "motion/react"
+
+export function Component() {
+  const x = useMotionValue(0)
+  const background = useTransform(
+    x,
+    [0, 100],
+    ["#ff0000", "#0000ff"]
+  )
+
+  return <motion.div style={{ x, background }} drag="x" />
+}
+```
+
+### Multiple Outputs
+
+Create multiple transformed values from a single input:
+
+```jsx
+import { motion, useMotionValue, useTransform } from "motion/react"
+
+export function Component() {
+  const x = useMotionValue(0)
+  const { opacity, scale } = useTransform(x, [0, 100], {
+    opacity: [0, 1],
+    scale: [0.5, 1]
+  })
+
+  return <motion.div style={{ opacity, scale, x }} />
+}
+```
+
+### With Easing
+
+Apply easing functions to transformations:
+
+```jsx
+import { motion, useMotionValue, useTransform } from "motion/react"
+
+export function Component() {
+  const x = useMotionValue(0)
+  const opacity = useTransform(
+    x,
+    [0, 100],
+    [0, 1],
+    { ease: (t) => t * t } // quadratic easing
+  )
+
+  return <motion.div style={{ x, opacity }} />
+}
+```
+
+### Without Clamping
+
+Allow values to extrapolate beyond ranges:
+
+```jsx
+import { motion, useMotionValue, useTransform } from "motion/react"
+
+export function Component() {
+  const x = useMotionValue(0)
+  const scale = useTransform(
+    x,
+    [0, 100],
+    [1, 2],
+    { clamp: false }
+  )
+
+  return <motion.div style={{ x, scale }} />
+}
+```
+
+## Notes
+
+- Transformed values automatically update when their dependencies change
+- The input range must be a linear series (all increasing or all decreasing)
+- All values in the output range must be the same type and format
+- By default, values are clamped to the output range
+- Easing functions apply between each pair of values in the ranges
+
+## Related
+
+- [useMotionValue](/api/use-motion-value) - Create motion values
+- [useSpring](/api/use-spring) - Add spring physics
+- [transform](/api/transform) - Pure transform function
+- [MotionValue](/api/motion-value) - MotionValue class API

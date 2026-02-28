@@ -1,0 +1,310 @@
+---
+title: Getting Started with Vue
+description: Build your first Vue animation with Motion
+---
+
+## Installation
+
+Install Motion for Vue in your Vue 3 project:
+
+```bash
+npm install motion-v
+```
+
+<Note>
+  Motion for Vue requires Vue 3.0 or higher.
+</Note>
+
+## Your First Animation
+
+Let's create a simple fade-in animation:
+
+```vue
+<script setup>
+import { motion } from "motion-v"
+</script>
+
+<template>
+  <motion.div
+    :initial="{ opacity: 0, y: 20 }"
+    :animate="{ opacity: 1, y: 0 }"
+    :transition="{ duration: 0.5 }"
+  >
+    Hello, Motion!
+  </motion.div>
+</template>
+```
+
+## Interactive Animation
+
+Create an animation that responds to user interaction:
+
+```vue
+<script setup>
+import { ref } from 'vue'
+import { motion } from 'motion-v'
+
+const isOpen = ref(false)
+</script>
+
+<template>
+  <div>
+    <button @click="isOpen = !isOpen">
+      Toggle
+    </button>
+    
+    <motion.div
+      :animate="{
+        width: isOpen ? 300 : 100,
+        height: isOpen ? 200 : 100,
+        backgroundColor: isOpen ? '#3b82f6' : '#8b5cf6'
+      }"
+      :transition="{ type: 'spring', stiffness: 300, damping: 30 }"
+      style="border-radius: 20px"
+    />
+  </div>
+</template>
+```
+
+## Hover and Tap Animations
+
+Add interactive states with gesture props:
+
+```vue
+<script setup>
+import { motion } from 'motion-v'
+</script>
+
+<template>
+  <motion.button
+    :whileHover="{ scale: 1.1 }"
+    :whileTap="{ scale: 0.95 }"
+    style="
+      padding: 16px 32px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    "
+  >
+    Hover or Click Me
+  </motion.button>
+</template>
+```
+
+## Keyframe Animations
+
+Animate through multiple values:
+
+```vue
+<script setup>
+import { motion } from 'motion-v'
+</script>
+
+<template>
+  <motion.div
+    :animate="{
+      x: [0, 100, 0],
+      rotate: [0, 180, 360],
+      borderRadius: ['20%', '50%', '20%']
+    }"
+    :transition="{
+      duration: 2,
+      repeat: Infinity,
+      ease: 'easeInOut'
+    }"
+    style="
+      width: 100px;
+      height: 100px;
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    "
+  />
+</template>
+```
+
+## Using Refs
+
+Access the underlying DOM element:
+
+```vue
+<script setup>
+import { ref, onMounted } from 'vue'
+import { motion } from 'motion-v'
+
+const elementRef = ref(null)
+
+onMounted(() => {
+  console.log('Element:', elementRef.value)
+})
+</script>
+
+<template>
+  <motion.div
+    ref="elementRef"
+    :animate="{ x: 100 }"
+  >
+    Element with ref
+  </motion.div>
+</template>
+```
+
+## Composables
+
+Vue composables for advanced animation control:
+
+```vue
+<script setup>
+import { ref } from 'vue'
+import { motion, useMotionValue, useTransform } from 'motion-v'
+
+const x = useMotionValue(0)
+const opacity = useTransform(x, [0, 100], [0, 1])
+const scale = useTransform(x, [0, 100], [0.8, 1])
+</script>
+
+<template>
+  <motion.div
+    :style="{ x, opacity, scale }"
+    drag="x"
+    :dragConstraints="{ left: 0, right: 100 }"
+  >
+    Drag me
+  </motion.div>
+</template>
+```
+
+## Component Structure
+
+Best practices for organizing Motion components:
+
+```vue
+<script setup>
+import { ref, computed } from 'vue'
+import { motion } from 'motion-v'
+
+const isActive = ref(false)
+
+const variants = {
+  inactive: { scale: 1, opacity: 0.6 },
+  active: { scale: 1.2, opacity: 1 }
+}
+
+const currentVariant = computed(() => 
+  isActive.value ? 'active' : 'inactive'
+)
+</script>
+
+<template>
+  <motion.div
+    :animate="currentVariant"
+    :variants="variants"
+    @click="isActive = !isActive"
+    style="
+      width: 100px;
+      height: 100px;
+      background: #10b981;
+      border-radius: 12px;
+      cursor: pointer;
+    "
+  />
+</template>
+```
+
+## TypeScript Support
+
+Motion for Vue has full TypeScript support:
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue'
+import { motion } from 'motion-v'
+import type { MotionProps } from 'motion-v'
+
+interface AnimationState {
+  x: number
+  y: number
+  rotate: number
+}
+
+const animate = ref<AnimationState>({
+  x: 100,
+  y: 50,
+  rotate: 45
+})
+</script>
+
+<template>
+  <motion.div :animate="animate" />
+</template>
+```
+
+## Common Patterns
+
+### List Animations
+
+```vue
+<script setup>
+import { ref } from 'vue'
+import { motion } from 'motion-v'
+
+const items = ref(['Item 1', 'Item 2', 'Item 3'])
+</script>
+
+<template>
+  <div>
+    <motion.div
+      v-for="(item, index) in items"
+      :key="item"
+      :initial="{ opacity: 0, x: -20 }"
+      :animate="{ opacity: 1, x: 0 }"
+      :transition="{ delay: index * 0.1 }"
+    >
+      {{ item }}
+    </motion.div>
+  </div>
+</template>
+```
+
+### Conditional Rendering
+
+```vue
+<script setup>
+import { ref } from 'vue'
+import { motion } from 'motion-v'
+
+const show = ref(false)
+</script>
+
+<template>
+  <div>
+    <button @click="show = !show">Toggle</button>
+    
+    <motion.div
+      v-if="show"
+      :initial="{ opacity: 0, scale: 0.8 }"
+      :animate="{ opacity: 1, scale: 1 }"
+      :exit="{ opacity: 0, scale: 0.8 }"
+    >
+      Conditional content
+    </motion.div>
+  </div>
+</template>
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Spring Animations" icon="wave-pulse" href="/guides/spring-animations">
+    Master physics-based animations
+  </Card>
+  <Card title="Keyframe Animations" icon="film" href="/guides/keyframe-animations">
+    Create complex animation sequences
+  </Card>
+  <Card title="Drag Interactions" icon="hand" href="/guides/drag-interactions">
+    Implement drag gestures and constraints
+  </Card>
+  <Card title="Performance" icon="gauge-high" href="/guides/performance">
+    Optimize for production
+  </Card>
+</CardGroup>

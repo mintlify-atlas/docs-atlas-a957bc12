@@ -1,0 +1,284 @@
+---
+title: LazyMotion
+description: Reduce bundle size by lazy loading Motion features
+---
+
+The `LazyMotion` component enables code-splitting for Motion. Use it with the `m` component (instead of `motion`) to load only essential features synchronously, then load animations and gestures on-demand.
+
+## Usage
+
+### Synchronous Loading
+
+```jsx
+import { LazyMotion, m, domAnimation } from "motion/react"
+
+export function App() {
+  return (
+    <LazyMotion features={domAnimation">
+      <m.div animate={{ scale: 1.2 }} />
+    </LazyMotion>
+  )
+}
+```
+
+### Asynchronous Loading
+
+```jsx
+import { LazyMotion, m } from "motion/react"
+
+const loadFeatures = () =>
+  import("motion/react").then(res => res.domAnimation)
+
+export function App() {
+  return (
+    <LazyMotion features={loadFeatures">
+      <m.div animate={{ scale: 1.2 }} />
+    </LazyMotion>
+  )
+}
+```
+
+## Props
+
+<ParamField path="children" type="ReactNode">
+  React children. Use the `m` component instead of `motion` within `LazyMotion`.
+
+  ```jsx
+  <LazyMotion features={domAnimation">
+    <m.div animate={{ x: 100 }} />
+  </LazyMotion>
+  ```
+</ParamField>
+
+<ParamField path="features" type="FeatureBundle or () => Promise<FeatureBundle>" required>
+  Feature bundle to load. Can be provided synchronously or asynchronously.
+  
+  **Available bundles:**
+  - `domAnimation` - All animation features (~30kb)
+  - `domMax` - All features including layout animations (~50kb)
+
+  ```jsx
+  // Synchronous
+  import { domAnimation } from "motion/react"
+  <LazyMotion features={domAnimation">
+
+  // Asynchronous
+  <LazyMotion features={() => import("motion/react").then(r => r.domAnimation)">
+  ```
+</ParamField>
+
+<ParamField path="strict" type="boolean" default="false">
+  If `true`, throws an error if a `motion` component (instead of `m`) is used within `LazyMotion`.
+  
+  Useful for enforcing code-splitting across your team.
+
+  ```jsx
+  <LazyMotion features={domAnimation} strict>
+    {/* This will throw an error */}
+    <motion.div />
+    
+    {/* Use m instead */}
+    <m.div />
+  </LazyMotion>
+  ```
+</ParamField>
+
+## Feature Bundles
+
+### domAnimation
+
+Includes animation and gesture features:
+- Animations
+- Gestures (hover, tap, drag, pan)
+- Variants
+- Exit animations
+
+**Bundle size:** ~30kb gzipped
+
+```jsx
+import { LazyMotion, m, domAnimation } from "motion/react"
+
+<LazyMotion features={domAnimation">
+  <m.div 
+    drag
+    whileHover={{ scale: 1.1 }}
+    animate={{ x: 100 }}
+  />
+</LazyMotion>
+```
+
+### domMax
+
+Includes all features:
+- Everything in `domAnimation`
+- Layout animations
+- Shared layout animations
+
+**Bundle size:** ~50kb gzipped
+
+```jsx
+import { LazyMotion, m, domMax } from "motion/react"
+
+<LazyMotion features={domMax">
+  <m.div layout layoutId="card" />
+</LazyMotion>
+```
+
+## Examples
+
+### Async Loading with Suspense
+
+```jsx
+import { Suspense } from "react"
+import { LazyMotion, m } from "motion/react"
+
+const loadFeatures = () =>
+  import("motion/react").then(res => res.domAnimation)
+
+function App() {
+  return (
+    <Suspense fallback={<div>Loading...</div>">
+      <LazyMotion features={loadFeatures">
+        <m.div animate={{ opacity: 1 }} />
+      </LazyMotion>
+    </Suspense>
+  )
+}
+```
+
+### Feature Bundle in Separate File
+
+```js
+// features.js
+import { domAnimation } from "motion/react"
+export default domAnimation
+```
+
+```jsx
+// App.jsx
+import { LazyMotion, m } from "motion/react"
+
+const loadFeatures = () => import("./features.js").then(res => res.default)
+
+function App() {
+  return (
+    <LazyMotion features={loadFeatures">
+      <m.div animate={{ x: 100 }} />
+    </LazyMotion>
+  )
+}
+```
+
+### Strict Mode Enforcement
+
+```jsx
+import { LazyMotion, m, motion, domAnimation } from "motion/react"
+
+function App() {
+  return (
+    <LazyMotion features={domAnimation} strict>
+      {/* ✅ This works */}
+      <m.div animate={{ x: 100 }} />
+      
+      {/* ❌ This throws an error */}
+      <motion.div animate={{ y: 100 }} />
+    </LazyMotion>
+  )
+}
+```
+
+### Conditional Features
+
+```jsx
+import { LazyMotion, m, domAnimation, domMax } from "motion/react"
+
+function App({ needsLayout }) {
+  const features = needsLayout ? domMax : domAnimation
+
+  return (
+    <LazyMotion features={features">
+      {needsLayout ? (
+        <m.div layout />
+      ) : (
+        <m.div animate={{ x: 100 }} />
+      )}
+    </LazyMotion>
+  )
+}
+```
+
+### Progressive Enhancement
+
+```jsx
+import { LazyMotion, m } from "motion/react"
+
+// Load features on interaction
+function App() {
+  const [loadFeatures, setLoadFeatures] = useState(false)
+
+  const features = loadFeatures
+    ? () => import("motion/react").then(res => res.domAnimation)
+    : undefined
+
+  return (
+    <div>
+      {features ? (
+        <LazyMotion features={features">
+          <m.div animate={{ x: 100 }} />
+        </LazyMotion>
+      ) : (
+        <div>Static content</div>
+      )}
+      <button onClick={() => setLoadFeatures(true)">
+        Enable animations
+      </button>
+    </div>
+  )
+}
+```
+
+## TypeScript
+
+```typescript
+import { LazyMotion, m } from "motion/react"
+import type { LazyProps, FeatureBundle } from "motion/react"
+
+function Component(props: LazyProps) {
+  return <LazyMotion {...props} />
+}
+
+// Custom feature loader
+type FeatureLoader = () => Promise<FeatureBundle>
+
+const loadFeatures: FeatureLoader = () =>
+  import("motion/react").then(res => res.domAnimation)
+```
+
+## Bundle Size Comparison
+
+| Approach | Initial Bundle | Features |
+|----------|---------------|----------|
+| `motion` | ~50kb | All features always loaded |
+| `m` + `LazyMotion` (sync) | ~20kb + 30kb | Features loaded synchronously |
+| `m` + `LazyMotion` (async) | ~20kb | Features loaded on-demand (~30kb) |
+
+## How It Works
+
+1. The `m` component loads only essential rendering features
+2. `LazyMotion` provides animation/gesture features via context
+3. Features are loaded synchronously or asynchronously
+4. All `m` components within `LazyMotion` share the loaded features
+
+## Notes
+
+- Use `m` instead of `motion` when using `LazyMotion`
+- Only one `LazyMotion` should wrap your app (typically at the root)
+- Async loading may cause a flash if animations start before features load
+- `strict` mode helps catch accidental `motion` usage
+- Features are loaded once and cached
+
+## Related
+
+- [motion](/api/motion) - Full-featured motion component
+- [bundle size optimization guide](/guides/reduce-bundle-size) - Learn more about code-splitting
+- [MotionConfig](/api/motion-config) - Configure default settings

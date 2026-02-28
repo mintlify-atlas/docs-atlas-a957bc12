@@ -1,0 +1,347 @@
+---
+title: Animation Controls
+description: Control animations imperatively using hooks and controls for complex, programmatic animation sequences
+---
+
+While declarative animations are powerful, sometimes you need imperative control over when and how animations run. Motion provides hooks and controls for these scenarios.
+
+## useAnimationControls
+
+The `useAnimationControls` hook creates a controls object that can programmatically trigger animations:
+
+```jsx
+import { motion, useAnimationControls } from "framer-motion"
+import { useEffect } from "react"
+
+function Component() {
+  const controls = useAnimationControls()
+  
+  useEffect(() => {
+    controls.start({
+      x: 100,
+      transition: { duration: 0.5 }
+    })
+  }, [])
+  
+  return <motion.div animate={controls} />
+}
+```
+
+Pass the controls to the `animate` prop to connect them to the component.
+
+<Note>
+`useAnimation` is an alias for `useAnimationControls` and works identically.
+</Note>
+
+## Starting Animations
+
+The `.start()` method triggers animations:
+
+```jsx
+const controls = useAnimationControls()
+
+// Animate to specific values
+controls.start({ 
+  x: 100, 
+  opacity: 0.5 
+})
+
+// Animate to a variant
+controls.start("visible")
+
+// Returns a Promise that resolves when animation completes
+await controls.start({ x: 100 })
+```
+
+### Example: Animation on Mount
+
+```jsx
+import { useEffect } from "react"
+import { motion, useAnimation, useMotionValue } from "framer-motion"
+
+function App() {
+  const controls = useAnimation()
+  const x = useMotionValue(0)
+  
+  const variants = {
+    visible: { opacity: 1 },
+    hidden: { opacity: 0 }
+  }
+  
+  useEffect(() => {
+    controls.start("visible")
+    
+    setTimeout(() => x.set(100), 2000)
+  }, [])
+  
+  return (
+    <motion.div animate={controls} initial="hidden">
+      <motion.div 
+        variants={variants} 
+        drag 
+        style={{ 
+          width: 100, 
+          height: 100, 
+          background: "white",
+          x 
+        }} 
+      />
+    </motion.div>
+  )
+}
+```
+
+## Stopping Animations
+
+Stop all running animations immediately:
+
+```jsx
+controls.stop()
+```
+
+## Setting Values Instantly
+
+Set values without animating:
+
+```jsx
+controls.set({ x: 0, opacity: 1 })
+```
+
+## Sequencing Animations
+
+Chain animations using async/await:
+
+```jsx
+async function sequence() {
+  await controls.start({ x: 100 })
+  await controls.start({ y: 100 })
+  await controls.start({ x: 0, y: 0 })
+}
+```
+
+## useAnimate
+
+The `useAnimate` hook provides a more flexible way to animate elements within a component scope:
+
+```jsx
+import { useAnimate } from "framer-motion"
+
+function Component() {
+  const [scope, animate] = useAnimate()
+  
+  return (
+    <div ref={scope">
+      <button
+        onClick={() => {
+          animate(".box", { x: 100 }, { duration: 0.5 })
+        }}
+      >
+        Animate
+      </button>
+      <div className="box" style={{ width: 100, height: 100, background: "white" }} />
+    </div>
+  )
+}
+```
+
+The `animate` function targets elements using CSS selectors within the scope:
+
+```jsx
+// Animate a single element
+animate(".box", { x: 100 })
+
+// Animate multiple elements
+animate("li", { opacity: 1 }, { delay: stagger(0.1) })
+
+// Use element reference
+const element = scope.current.querySelector(".box")
+animate(element, { scale: 1.2 })
+```
+
+### Animation Sequences
+
+Create complex sequences with the array syntax:
+
+```jsx
+function Component() {
+  const [scope, animate] = useAnimate()
+  
+  return (
+    <div ref={scope">
+      <div 
+        className="box" 
+        style={{
+          width: 50,
+          height: 50,
+          backgroundColor: "hotpink",
+          transform: "scale(0.1)",
+          opacity: 0.5
+        }}
+      />
+      <button
+        onClick={() => {
+          animate([
+            [".box", { x: 90, scale: 2, opacity: 1 }, { duration: 2 }]
+          ])
+        }}
+      >
+        Play
+      </button>
+    </div>
+  )
+}
+```
+
+Each array entry is `[selector, values, options]`.
+
+## Controlling Multiple Components
+
+Create a single controls instance to control multiple components:
+
+```jsx
+import { motion, useAnimationControls } from "framer-motion"
+
+function App() {
+  const controls = useAnimationControls()
+  
+  return (
+    <>
+      <button onClick={() => controls.start({ x: 100 })}>Animate</button>
+      <motion.div animate={controls} style={{ background: "red" }} />
+      <motion.div animate={controls} style={{ background: "blue" }} />
+      <motion.div animate={controls} style={{ background: "green" }} />
+    </>
+  )
+}
+```
+
+All components with the same controls animate together.
+
+## animationControls (Advanced)
+
+For non-React contexts, use the standalone `animationControls` function:
+
+```jsx
+import { animationControls } from "framer-motion"
+
+const controls = animationControls()
+
+// Subscribe a component
+const unsubscribe = controls.subscribe(visualElement)
+
+// Start animation
+controls.start({ x: 100 })
+
+// Set values
+controls.set({ x: 0 })
+
+// Stop animations
+controls.stop()
+
+// Clean up
+controls.mount()
+```
+
+<Warning>
+The `animationControls` function is a low-level API. Most developers should use `useAnimationControls` or `useAnimate` instead.
+</Warning>
+
+## Dynamic Animations
+
+Animate based on component state or props:
+
+```jsx
+function Component({ isExpanded }) {
+  const controls = useAnimationControls()
+  
+  useEffect(() => {
+    if (isExpanded) {
+      controls.start({ height: 200 })
+    } else {
+      controls.start({ height: 0 })
+    }
+  }, [isExpanded])
+  
+  return <motion.div animate={controls} />
+}
+```
+
+## Animation Callbacks
+
+React to animation lifecycle events:
+
+```jsx
+<motion.div
+  animate={controls}
+  onAnimationStart={() => console.log("Animation started")}
+  onAnimationComplete={() => console.log("Animation completed")}
+/>
+```
+
+## Performance Considerations
+
+- Controls animations are just as performant as declarative animations
+- Use `.set()` instead of `.start()` for instant updates
+- Batch multiple `.start()` calls when possible
+- Clean up controls in `useEffect` cleanup functions
+
+## When to Use Controls
+
+Use animation controls when:
+- Animations need to start based on events or side effects
+- You need to sequence multiple animations
+- Animation logic is complex or conditional
+- You're animating non-React elements within your component
+
+Use declarative animations when:
+- Animation is directly tied to state changes
+- Simple transitions between states
+- Animation logic is straightforward
+
+## Comparison
+
+<CodeGroup>
+```jsx Declarative
+function Component() {
+  const [x, setX] = useState(0)
+  
+  return (
+    <motion.div
+      animate={{ x }}
+      onClick={() => setX(100)}
+    />
+  )
+}
+```
+
+```jsx Imperative
+function Component() {
+  const controls = useAnimationControls()
+  
+  return (
+    <motion.div
+      animate={controls}
+      onClick={() => controls.start({ x: 100 })}
+    />
+  )
+}
+```
+</CodeGroup>
+
+## API Reference
+
+For complete API details, see:
+- [useAnimationControls](/api/use-animation)
+- [useAnimate](/api/use-animate)
+- [animationControls](/api/animation-controls)
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Variants" href="/concepts/variants" icon="layer-group">
+    Organize animations with variants
+  </Card>
+  <Card title="Animation Sequences" href="/guides/keyframe-animations" icon="timeline">
+    Create complex animation timelines
+  </Card>
+</CardGroup>

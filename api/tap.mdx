@@ -1,0 +1,209 @@
+---
+title: 'Tap'
+description: 'Tap gesture props and event handlers'
+icon: 'hand-pointer'
+---
+
+## Overview
+
+The tap gesture (also called press gesture) detects pointer press interactions. It provides event callbacks for tap start, end, and cancel, as well as animation states.
+
+## Props
+
+### whileTap
+
+Properties or variant label to animate to while the component is pressed.
+
+```tsx
+type whileTap = VariantLabels | TargetAndTransition
+
+type VariantLabels = string | string[]
+
+type TargetAndTransition = {
+  [key: string]: any
+  transition?: Transition
+  transitionEnd?: ResolvedValues
+}
+```
+
+```jsx
+<motion.button whileTap={{ scale: 0.95 }">
+  Press me
+</motion.button>
+```
+
+```jsx
+// With variants
+const variants = {
+  tap: {
+    scale: 0.9,
+    opacity: 0.8
+  }
+}
+
+<motion.div
+  variants={variants}
+  whileTap="tap"
+/>
+```
+
+## Event Handlers
+
+### onTap
+
+Callback when the tap gesture successfully ends on this element.
+
+```tsx
+type onTap = (
+  event: MouseEvent | TouchEvent | PointerEvent,
+  info: TapInfo
+) => void
+
+interface TapInfo {
+  point: { x: number; y: number }
+}
+```
+
+```jsx
+<motion.button
+  onTap={(event, info) => {
+    console.log('Tapped at', info.point.x, info.point.y)
+  }}
+>
+  Click me
+</motion.button>
+```
+
+### onTapStart
+
+Callback when the tap gesture starts on this element.
+
+```tsx
+type onTapStart = (
+  event: MouseEvent | TouchEvent | PointerEvent,
+  info: TapInfo
+) => void
+```
+
+```jsx
+<motion.div
+  onTapStart={(event, info) => {
+    console.log('Tap started at', info.point)
+  }}
+/>
+```
+
+### onTapCancel
+
+Callback when the tap gesture ends outside this element.
+
+```tsx
+type onTapCancel = (
+  event: MouseEvent | TouchEvent | PointerEvent,
+  info: TapInfo
+) => void
+```
+
+```jsx
+<motion.div
+  onTapCancel={(event, info) => {
+    console.log('Tap cancelled')
+  }}
+/>
+```
+
+## Advanced Props
+
+### globalTapTarget
+
+If `true`, the tap gesture will attach its start listener to window.
+
+```tsx
+type globalTapTarget = boolean // default: false
+```
+
+Note: This is not officially supported in the public API.
+
+### propagate.tap
+
+Control whether tap gesture events propagate to parent motion components.
+
+```tsx
+interface PropagateOptions {
+  tap?: boolean // default: true
+}
+```
+
+```jsx
+// Prevent parent tap handlers from firing
+<motion.div onTap={onParentTap">
+  <motion.div
+    onTap={onChildTap}
+    propagate={{ tap: false }}
+  />
+</motion.div>
+```
+
+## Examples
+
+### Button with tap feedback
+
+```jsx
+<motion.button
+  whileTap={{ scale: 0.95 }}
+  onTap={() => console.log('Button clicked')}
+  style={{
+    padding: '12px 24px',
+    borderRadius: '8px',
+    backgroundColor: '#007bff',
+    color: 'white',
+    border: 'none'
+  }}
+>
+  Submit
+</motion.button>
+```
+
+### Interactive card
+
+```jsx
+const [selected, setSelected] = useState(false)
+
+<motion.div
+  whileTap={{ scale: 0.98 }}
+  onTap={() => setSelected(!selected)}
+  animate={{
+    backgroundColor: selected ? '#007bff' : '#f8f8f8'
+  }}
+  style={{
+    padding: '20px',
+    borderRadius: '12px',
+    cursor: 'pointer'
+  }}
+>
+  Click to select
+</motion.div>
+```
+
+### Tap with haptic feedback
+
+```jsx
+<motion.button
+  whileTap={{ scale: 0.9 }}
+  onTapStart={() => {
+    // Trigger haptic feedback on supported devices
+    if (navigator.vibrate) {
+      navigator.vibrate(10)
+    }
+  }}
+  onTap={() => console.log('Action completed')}
+>
+  Tap with feedback
+</motion.button>
+```
+
+## Notes
+
+- Disabled buttons automatically ignore tap gestures
+- The tap gesture fires `onTap` only when the pointer is released while still over the element
+- If the pointer moves off the element before release, `onTapCancel` fires instead

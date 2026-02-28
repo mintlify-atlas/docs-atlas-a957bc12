@@ -1,0 +1,382 @@
+---
+title: AnimationOptions
+description: Type definitions for animation configuration options
+---
+
+## Overview
+
+The `AnimationOptions` type defines configuration options for animations in Motion. It provides control over timing, easing, orchestration, and more.
+
+## Import
+
+```typescript
+import type { AnimationOptions } from "motion"
+```
+
+## Type Definition
+
+```typescript
+type AnimationOptions =
+  | ValueAnimationWithDynamicDelay & ReduceMotionOption
+  | (ValueAnimationWithDynamicDelay &
+      ReduceMotionOption &
+      StyleTransitions &
+      SVGPathTransitions &
+      SVGTransitions &
+      VariableTransitions & {
+        default?: ValueTransition
+        layout?: ValueTransition
+      })
+```
+
+## Core Options
+
+### Timing
+
+<ParamField path="duration" type="number" default="0.3">
+  Total duration of the animation in seconds.
+</ParamField>
+
+<ParamField path="delay" type="number or DynamicOption<number>" default="0">
+  Delay before animation starts in seconds. Can be a function for staggered animations.
+</ParamField>
+
+<ParamField path="elapsed" type="number" default="0">
+  Duration of time already elapsed in the animation.
+</ParamField>
+
+### Easing
+
+<ParamField path="ease" type="Easing or Easing[]">
+  Easing function or array of easing functions for keyframe animations.
+</ParamField>
+
+<ParamField path="times" type="number[]">
+  Array of numbers between 0 and 1 defining when each keyframe occurs. Must match keyframe count.
+</ParamField>
+
+### Animation Type
+
+<ParamField path="type" type="AnimationGeneratorType" default="tween">
+  Type of animation:
+  - `"tween"`: Duration-based with easing
+  - `"spring"`: Physics or duration-based spring
+  - `"inertia"`: Decay animation
+  - `"keyframes"`: Multi-keyframe animation
+  - `false`: Instant (no animation)
+</ParamField>
+
+## Repeat Options
+
+<ParamField path="repeat" type="number" default="0">
+  Number of times to repeat. Set to `Infinity` for infinite loops.
+</ParamField>
+
+<ParamField path="repeatType" type="string" default="loop">
+  How to repeat the animation:
+  - `"loop"`: Restart from beginning
+  - `"reverse"`: Alternate direction each time
+  - `"mirror"`: Swap from/to values each time
+</ParamField>
+
+<ParamField path="repeatDelay" type="number" default="0">
+  Delay between repeats in seconds.
+</ParamField>
+
+## Spring Options
+
+When `type: "spring"`:
+
+<ParamField path="stiffness" type="number" default="100">
+  Spring stiffness. Higher values create more sudden movement.
+</ParamField>
+
+<ParamField path="damping" type="number" default="10">
+  Strength of opposing force. Set to 0 for infinite oscillation.
+</ParamField>
+
+<ParamField path="mass" type="number" default="1">
+  Mass of the moving object. Higher values result in more lethargic movement.
+</ParamField>
+
+<ParamField path="bounce" type="number" default="0.25">
+  Bounciness of the spring (0-1). Used with `duration` for intuitive spring configuration.
+</ParamField>
+
+<ParamField path="visualDuration" type="number">
+  Time for the visual bulk of the animation to complete. The spring will "bounce" after this.
+</ParamField>
+
+<ParamField path="velocity" type="number" default="0">
+  Initial velocity of the animation.
+</ParamField>
+
+<ParamField path="restSpeed" type="number" default="0.01">
+  End animation if speed drops below this value.
+</ParamField>
+
+<ParamField path="restDelta" type="number" default="0.01">
+  End animation if distance is below this value.
+</ParamField>
+
+## Inertia Options
+
+When `type: "inertia"`:
+
+<ParamField path="power" type="number" default="0.8">
+  Higher power equals further target.
+</ParamField>
+
+<ParamField path="timeConstant" type="number" default="700">
+  Affects duration of deceleration.
+</ParamField>
+
+<ParamField path="modifyTarget" type="(v: number) => number">
+  Function to modify the automatically-calculated target. Useful for snapping.
+</ParamField>
+
+<ParamField path="min" type="number">
+  Minimum constraint. Value will bounce against this.
+</ParamField>
+
+<ParamField path="max" type="number">
+  Maximum constraint. Value will bounce against this.
+</ParamField>
+
+<ParamField path="bounceStiffness" type="number" default="500">
+  Stiffness of bounce spring when hitting constraints.
+</ParamField>
+
+<ParamField path="bounceDamping" type="number" default="10">
+  Damping of bounce spring when hitting constraints.
+</ParamField>
+
+## Orchestration Options
+
+<ParamField path="when" type="false | beforeChildren or afterChildren" default="false">
+  When to animate relative to children:
+  - `false`: Animate with children
+  - `"beforeChildren"`: Finish before children start
+  - `"afterChildren"`: Start after children finish
+</ParamField>
+
+<ParamField path="delayChildren" type="number or DynamicOption<number>" default="0">
+  Delay before starting child animations.
+</ParamField>
+
+<ParamField path="staggerChildren" type="number" default="0">
+  Stagger delay between child animations (deprecated: use `delayChildren: stagger()`).
+</ParamField>
+
+<ParamField path="staggerDirection" type="1 or -1" default="1">
+  Direction of stagger (deprecated: use `delayChildren: stagger(interval, { from: 'last' })`).
+</ParamField>
+
+## Lifecycle Callbacks
+
+<ParamField path="onUpdate" type="(latest: V) => void">
+  Called on every animation frame with the latest value.
+</ParamField>
+
+<ParamField path="onPlay" type="() => void">
+  Called when animation starts playing.
+</ParamField>
+
+<ParamField path="onComplete" type="() => void">
+  Called when animation completes.
+</ParamField>
+
+<ParamField path="onRepeat" type="() => void">
+  Called each time animation repeats.
+</ParamField>
+
+<ParamField path="onStop" type="() => void">
+  Called when animation is stopped.
+</ParamField>
+
+## Accessibility
+
+<ParamField path="reduceMotion" type="boolean">
+  Whether to reduce motion for this animation:
+  - `true`: Skip transform/layout animations
+  - `false`: Always animate
+  - `undefined`: Use device preference (default)
+</ParamField>
+
+## Per-Property Transitions
+
+Define different transitions for specific properties:
+
+```typescript
+interface StyleTransitions {
+  [K in keyof CSSStyleDeclaration]?: ValueTransition
+}
+```
+
+## Examples
+
+### Basic Tween
+
+```jsx
+const options: AnimationOptions = {
+  duration: 0.5,
+  ease: "easeOut"
+}
+
+animate(element, { opacity: 1 }, options)
+```
+
+### Spring Animation
+
+```jsx
+const options: AnimationOptions = {
+  type: "spring",
+  stiffness: 300,
+  damping: 20
+}
+
+animate(element, { scale: 1.2 }, options)
+```
+
+### Duration-Based Spring
+
+```jsx
+const options: AnimationOptions = {
+  type: "spring",
+  duration: 0.6,
+  bounce: 0.3
+}
+```
+
+### Keyframe Animation
+
+```jsx
+const options: AnimationOptions = {
+  duration: 2,
+  ease: ["easeIn", "easeOut"],
+  times: [0, 0.5, 1]
+}
+
+animate(element, { opacity: [0, 1, 0] }, options)
+```
+
+### Repeat Animation
+
+```jsx
+const options: AnimationOptions = {
+  repeat: Infinity,
+  repeatType: "reverse",
+  repeatDelay: 0.5,
+  duration: 1
+}
+```
+
+### With Callbacks
+
+```jsx
+const options: AnimationOptions = {
+  duration: 1,
+  onUpdate: (latest) => console.log(latest),
+  onComplete: () => console.log("Done!")
+}
+```
+
+### Staggered Children
+
+```jsx
+const options: AnimationOptions = {
+  delayChildren: 0.2,
+  staggerChildren: 0.1
+}
+```
+
+### Inertia Animation
+
+```jsx
+const options: AnimationOptions = {
+  type: "inertia",
+  velocity: 1000,
+  min: 0,
+  max: 500,
+  bounceStiffness: 300
+}
+```
+
+### Per-Property Transitions
+
+```jsx
+const options: AnimationOptions = {
+  default: { duration: 0.3 },
+  opacity: { duration: 0.5 },
+  scale: { 
+    type: "spring",
+    stiffness: 300 
+  }
+}
+
+animate(element, { 
+  opacity: 1, 
+  scale: 1.2 
+}, options)
+```
+
+### Reduced Motion
+
+```jsx
+const options: AnimationOptions = {
+  duration: 0.5,
+  reduceMotion: true // Skip animation
+}
+```
+
+### Dynamic Delay
+
+```jsx
+const options: AnimationOptions = {
+  delay: (i, total) => i * 0.1 // Stagger by index
+}
+```
+
+## Helper Types
+
+### DynamicOption
+
+Create values based on index:
+
+```typescript
+type DynamicOption<T> = (index: number, total: number) => T
+```
+
+### ValueTransition
+
+Base transition configuration:
+
+```typescript
+interface ValueTransition
+  extends AnimationOrchestrationOptions,
+    AnimationPlaybackOptions,
+    SpringOptions,
+    InertiaOptions,
+    KeyframeOptions {
+  type?: AnimationGeneratorType
+  duration?: number
+  // ... all options combined
+}
+```
+
+## Related Types
+
+<CardGroup cols={2}>
+  <Card title="Transition" href="/api/types/transition" icon="clock">
+    Transition type reference
+  </Card>
+  <Card title="SpringOptions" href="/api/types/spring-options" icon="wave-pulse">
+    Spring animation options
+  </Card>
+  <Card title="InertiaOptions" href="/api/types/inertia-options" icon="arrow-trend-down">
+    Inertia animation options
+  </Card>
+  <Card title="Easing" href="/api/types/easing" icon="chart-line">
+    Easing function types
+  </Card>
+</CardGroup>

@@ -1,0 +1,373 @@
+---
+title: animate()
+description: Animate elements, values, and objects with a simple function call
+---
+
+The `animate()` function provides imperative animation control for DOM elements, motion values, and JavaScript objects.
+
+## Signature
+
+```typescript
+// Animate an element
+function animate(
+  element: ElementOrSelector,
+  keyframes: DOMKeyframesDefinition,
+  options?: AnimationOptions
+): AnimationPlaybackControls
+
+// Animate a MotionValue
+function animate<V>(
+  value: V | MotionValue<V>,
+  keyframes: V | V[],
+  options?: ValueAnimationTransition<V>
+): AnimationPlaybackControls
+
+// Animate an object
+function animate<O>(
+  object: O | O[],
+  keyframes: ObjectTarget<O>,
+  options?: AnimationOptions
+): AnimationPlaybackControls
+
+// Animate a sequence
+function animate(
+  sequence: AnimationSequence,
+  options?: SequenceOptions
+): AnimationPlaybackControls
+```
+
+## Parameters
+
+<ParamField path="element" type="ElementOrSelector">
+  Element(s) to animate. Can be:
+  - A DOM element
+  - An array of elements
+  - A CSS selector string
+  - A NodeList
+</ParamField>
+
+<ParamField path="keyframes" type="DOMKeyframesDefinition">
+  Target values to animate to. An object with CSS properties:
+  
+  ```typescript
+  {
+    x: 100,
+    opacity: 0.5,
+    scale: 1.2,
+    backgroundColor: "#ff0000"
+  }
+  ```
+  
+  Values can be:
+  - Single values: `{ x: 100 }`
+  - Arrays of keyframes: `{ x: [0, 50, 100] }`
+  - With `null` to use current value: `{ x: [null, 100] }`
+</ParamField>
+
+<ParamField path="options" type="AnimationOptions">
+  Animation configuration options (see below)
+</ParamField>
+
+### Animation Options
+
+<ParamField path="duration" type="number" default="0.3">
+  Animation duration in seconds
+</ParamField>
+
+<ParamField path="delay" type="number" default="0">
+  Delay before animation starts, in seconds
+</ParamField>
+
+<ParamField path="ease" type="Easing or Easing[]" default="easeOut">
+  Easing function. Can be:
+  - Preset: `"linear"`, `"easeIn"`, `"easeOut"`, `"easeInOut"`, `"circIn"`, `"circOut"`, etc.
+  - Cubic bezier array: `[0.17, 0.67, 0.83, 0.67]`
+  - Array of easings for each keyframe
+</ParamField>
+
+<ParamField path="repeat" type="number" default="0">
+  Number of times to repeat. Set to `Infinity` for infinite loop
+</ParamField>
+
+<ParamField path="repeatType" type="loop | reverse or mirror" default="loop">
+  How to repeat:
+  - `"loop"`: Restart from beginning
+  - `"reverse"`: Alternate direction
+  - `"mirror"`: Swap start and end values
+</ParamField>
+
+<ParamField path="repeatDelay" type="number" default="0">
+  Delay between repeats, in seconds
+</ParamField>
+
+<ParamField path="type" type="tween | spring | inertia or false" default="tween">
+  Animation type:
+  - `"tween"`: Duration-based with easing
+  - `"spring"`: Physics-based spring
+  - `"inertia"`: Deceleration physics
+  - `false`: Instant (no animation)
+</ParamField>
+
+<ParamField path="onUpdate" type="(latest: Values) => void">
+  Called every frame with latest animated values
+</ParamField>
+
+<ParamField path="onComplete" type="() => void">
+  Called when animation completes
+</ParamField>
+
+<ParamField path="onRepeat" type="() => void">
+  Called each time animation repeats
+</ParamField>
+
+<ParamField path="onStop" type="() => void">
+  Called when animation is stopped
+</ParamField>
+
+## Return Value
+
+<ResponseField name="AnimationPlaybackControls" type="object">
+  Controls for the running animation:
+  
+  <Expandable title="properties">
+    <ResponseField name="time" type="number">
+      Current time in seconds (get/set)
+    </ResponseField>
+    
+    <ResponseField name="speed" type="number">
+      Playback speed multiplier (get/set)
+    </ResponseField>
+    
+    <ResponseField name="duration" type="number">
+      Total duration in seconds (readonly)
+    </ResponseField>
+    
+    <ResponseField name="state" type="AnimationPlayState">
+      Current state: `"idle"`, `"running"`, `"paused"`, or `"finished"`
+    </ResponseField>
+    
+    <ResponseField name="play" type="() => void">
+      Start or resume the animation
+    </ResponseField>
+    
+    <ResponseField name="pause" type="() => void">
+      Pause the animation
+    </ResponseField>
+    
+    <ResponseField name="stop" type="() => void">
+      Stop the animation and remove effects
+    </ResponseField>
+    
+    <ResponseField name="complete" type="() => void">
+      Jump to end and complete
+    </ResponseField>
+    
+    <ResponseField name="cancel" type="() => void">
+      Cancel and revert to initial state
+    </ResponseField>
+    
+    <ResponseField name="finished" type="Promise<void>">
+      Promise that resolves when animation completes
+    </ResponseField>
+    
+    <ResponseField name="then" type="(onResolve, onReject?) => Promise<void>">
+      Promise-like interface for chaining
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Examples
+
+### Animate an element
+
+```javascript
+import { animate } from "motion"
+
+const element = document.querySelector(".box")
+
+animate(element, { x: 100, opacity: 0 }, { duration: 1 })
+```
+
+### Animate with keyframes
+
+```javascript
+animate(
+  ".box",
+  { 
+    x: [0, 100, 0],
+    rotate: [0, 180, 360] 
+  },
+  { duration: 2, ease: "easeInOut" }
+)
+```
+
+### Control playback
+
+```javascript
+const animation = animate(".box", { rotate: 360 }, { duration: 2 })
+
+// Pause after 1 second
+setTimeout(() => animation.pause(), 1000)
+
+// Resume after another second  
+setTimeout(() => animation.play(), 2000)
+```
+
+### Wait for completion
+
+```javascript
+await animate(".box", { scale: 2 }, { duration: 0.5 })
+console.log("Animation complete!")
+
+// Or using .then()
+animate(".box", { scale: 2 }, { duration: 0.5 })
+  .then(() => console.log("Done!"))
+```
+
+### Animate MotionValues
+
+```javascript
+import { motionValue, animate } from "motion"
+
+const x = motionValue(0)
+
+// Listen to changes
+x.on("change", (latest) => console.log(latest))
+
+// Animate the value
+animate(x, 100, { duration: 1 })
+```
+
+### Animate objects
+
+```javascript
+const obj = { x: 0, y: 0 }
+
+await animate(
+  obj,
+  { x: 100, y: 50 },
+  { 
+    duration: 1,
+    onUpdate: (latest) => {
+      console.log(`x: ${latest.x}, y: ${latest.y}`)
+    }
+  }
+)
+
+console.log(obj) // { x: 100, y: 50 }
+```
+
+### Animate a sequence
+
+```javascript
+// Animate multiple elements in order
+await animate([
+  [".box", { x: 100 }],
+  [".circle", { scale: 1.5 }, { delay: 0.2 }],
+  [".box", { opacity: 0 }, { duration: 0.5 }]
+])
+```
+
+### Spring animation
+
+```javascript
+animate(
+  ".box",
+  { y: 100 },
+  { 
+    type: "spring",
+    stiffness: 300,
+    damping: 20
+  }
+)
+```
+
+### Repeat animations
+
+```javascript
+// Loop forever
+animate(
+  ".spinner",
+  { rotate: 360 },
+  { 
+    duration: 2,
+    repeat: Infinity,
+    ease: "linear"
+  }
+)
+
+// Bounce back and forth
+animate(
+  ".box",
+  { x: 100 },
+  { 
+    duration: 1,
+    repeat: 3,
+    repeatType: "reverse"
+  }
+)
+```
+
+### Per-value transitions
+
+```javascript
+animate(
+  ".box",
+  { 
+    x: 100,
+    opacity: 0
+  },
+  {
+    duration: 2,
+    // Override just for opacity
+    opacity: { 
+      duration: 0.5,
+      ease: "easeIn"
+    }
+  }
+)
+```
+
+## Type Definitions
+
+```typescript
+type ElementOrSelector = 
+  | Element 
+  | Element[] 
+  | NodeListOf<Element> 
+  | string
+
+type DOMKeyframesDefinition = {
+  // Transform properties
+  x?: number | string | Array<number | string | null>
+  y?: number | string | Array<number | string | null>
+  z?: number | string | Array<number | string | null>
+  rotate?: number | string | Array<number | string | null>
+  scale?: number | Array<number | null>
+  // ... all CSS properties
+  opacity?: number | Array<number | null>
+  backgroundColor?: string | Array<string | null>
+  // CSS variables
+  "--custom-property"?: string | number | Array<string | number | null>
+}
+
+interface AnimationPlaybackControls {
+  time: number
+  speed: number
+  duration: number
+  state: AnimationPlayState
+  play(): void
+  pause(): void
+  stop(): void
+  complete(): void
+  cancel(): void
+  finished: Promise<void>
+  then(onResolve: VoidFunction, onReject?: VoidFunction): Promise<void>
+}
+```
+
+## See Also
+
+- [useAnimate()](/api/use-animate) - React hook version with scope
+- [AnimationControls](/api/animation-controls) - Legacy imperative controls
+- [animateVisualElement()](/api/animate-visual-element) - Internal low-level API

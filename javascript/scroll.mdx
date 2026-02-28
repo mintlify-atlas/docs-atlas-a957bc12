@@ -1,0 +1,413 @@
+---
+title: scroll()
+description: Link animations to scroll position for engaging scroll-driven effects
+---
+
+The `scroll()` function creates scroll-linked animations that update based on scroll position. Perfect for parallax effects, scroll progress indicators, and revealing content on scroll.
+
+## Function Signature
+
+```typescript
+scroll(
+  onScroll: OnScroll | AnimationPlaybackControls,
+  options?: ScrollOptions
+): () => void
+```
+
+### Parameters
+
+#### onScroll
+
+Either a callback function or animation controls:
+
+```typescript
+type OnScroll = 
+  | ((progress: number) => void)
+  | ((progress: number, info: ScrollInfo) => void)
+  | AnimationPlaybackControls
+```
+
+#### ScrollOptions
+
+```typescript
+interface ScrollOptions {
+  container?: Element           // Scroll container (default: document.scrollingElement)
+  target?: Element             // Element to track
+  axis?: "x" | "y"             // Scroll axis (default: "y")
+  offset?: ScrollOffset        // When to trigger animation
+}
+```
+
+### Return Value
+
+Returns a cleanup function to remove the scroll listener:
+
+```javascript
+const cleanup = scroll(() => {/* ... */})
+
+// Later, remove listener
+cleanup()
+```
+
+## Basic Usage
+
+### Scroll-Linked Animation
+
+```javascript
+import { animate, scroll } from "motion"
+
+const element = document.querySelector(".box")
+
+// Create animation (paused)
+const animation = animate(element, { x: 100 }, {
+  duration: 1
+})
+
+// Link to scroll
+scroll(animation)
+```
+
+The animation will now progress based on scroll position:
+- 0% scroll = animation at start
+- 100% scroll = animation at end
+
+### Scroll Progress Callback
+
+```javascript
+scroll((progress) => {
+  console.log(`Scroll progress: ${progress * 100}%`)
+})
+
+// With element updates
+const progressBar = document.querySelector(".progress-bar")
+
+scroll((progress) => {
+  progressBar.style.width = `${progress * 100}%`
+})
+```
+
+### Scroll Info Callback
+
+```javascript
+scroll((progress, info) => {
+  console.log({
+    progress: info.y.progress,      // 0-1
+    current: info.y.current,        // Current scroll position
+    velocity: info.y.velocity,      // Scroll velocity
+    scrollLength: info.y.scrollLength,
+    time: info.time
+  })
+})
+```
+
+## Scroll Options
+
+### Custom Container
+
+Track scroll within a specific container:
+
+```javascript
+const container = document.querySelector(".scroll-container")
+const animation = animate(element, { x: 100 })
+
+scroll(animation, {
+  container: container
+})
+```
+
+### Horizontal Scroll
+
+```javascript
+scroll(animation, {
+  axis: "x"
+})
+```
+
+### Target Element
+
+Animate based on when a specific element scrolls through viewport:
+
+```javascript
+const target = document.querySelector(".section")
+const animation = animate(element, { opacity: 1 })
+
+scroll(animation, {
+  target: target
+})
+```
+
+### Scroll Offsets
+
+Control when the animation starts and ends:
+
+```javascript
+scroll(animation, {
+  target: element,
+  offset: ["start end", "end start"]
+})
+```
+
+Offset format: `["target viewport", "target viewport"]`
+
+Positions:
+- `"start"` - Top/left edge
+- `"center"` - Center point
+- `"end"` - Bottom/right edge
+- Pixel values: `"100px"`
+- Viewport units: `"50vh"`, `"25vw"`
+- Percentages: `"25%"`
+- Numbers: `0.5` (50%)
+
+## Examples
+
+### Parallax Effect
+
+```javascript
+const background = document.querySelector(".bg")
+const foreground = document.querySelector(".fg")
+
+const bgAnimation = animate(background, { y: -200 }, { duration: 1 })
+const fgAnimation = animate(foreground, { y: -400 }, { duration: 1 })
+
+scroll(bgAnimation)
+scroll(fgAnimation)
+```
+
+### Scroll Progress Bar
+
+```javascript
+const progressBar = document.querySelector(".progress")
+
+const animation = animate(progressBar, {
+  scaleX: [0, 1]
+}, {
+  duration: 1
+})
+
+scroll(animation)
+```
+
+### Reveal on Scroll
+
+```javascript
+const sections = document.querySelectorAll(".section")
+
+sections.forEach((section) => {
+  const animation = animate(section, {
+    opacity: [0, 1],
+    y: [100, 0]
+  }, {
+    duration: 1
+  })
+  
+  scroll(animation, {
+    target: section,
+    offset: ["start end", "center center"]
+  })
+})
+```
+
+### Sticky Scroll Animation
+
+```javascript
+const element = document.querySelector(".sticky-element")
+
+const animation = animate(element, {
+  scale: [1, 2],
+  rotate: [0, 360]
+}, {
+  duration: 1
+})
+
+scroll(animation, {
+  target: element,
+  offset: ["start start", "end start"]
+})
+```
+
+### Image Scale on Scroll
+
+```javascript
+const images = document.querySelectorAll(".image")
+
+images.forEach((image) => {
+  const animation = animate(image, {
+    scale: [1.2, 1]
+  }, {
+    duration: 1
+  })
+  
+  scroll(animation, {
+    target: image,
+    offset: ["start end", "end start"]
+  })
+})
+```
+
+### Text Reveal
+
+```javascript
+const words = document.querySelectorAll(".word")
+
+words.forEach((word, i) => {
+  const animation = animate(word, {
+    opacity: [0, 1],
+    filter: ["blur(10px)", "blur(0px)"]
+  }, {
+    duration: 1,
+    delay: i * 0.05
+  })
+  
+  scroll(animation, {
+    target: word.closest(".container"),
+    offset: ["start center", "end center"]
+  })
+})
+```
+
+### Scroll-Based Counter
+
+```javascript
+const counter = document.querySelector(".counter")
+const target = { value: 0 }
+
+const animation = animate(target, { value: 1000 }, {
+  duration: 1,
+  onUpdate: () => {
+    counter.textContent = Math.round(target.value)
+  }
+})
+
+scroll(animation, {
+  target: counter,
+  offset: ["start end", "end center"]
+})
+```
+
+### Horizontal Scroll Gallery
+
+```javascript
+const container = document.querySelector(".gallery-container")
+const gallery = document.querySelector(".gallery")
+const cards = gallery.querySelectorAll(".card")
+
+// Calculate total scroll distance
+const scrollDistance = gallery.scrollWidth - container.clientWidth
+
+const animation = animate(gallery, {
+  x: [0, -scrollDistance]
+}, {
+  duration: 1
+})
+
+scroll(animation, {
+  container: container,
+  axis: "y"
+})
+```
+
+### Fade Through Sections
+
+```javascript
+const sections = document.querySelectorAll(".fade-section")
+
+sections.forEach((section) => {
+  scroll((progress) => {
+    // Fade in from 0-0.5, fade out from 0.5-1
+    const opacity = progress < 0.5 
+      ? progress * 2 
+      : (1 - progress) * 2
+    
+    section.style.opacity = opacity
+  }, {
+    target: section,
+    offset: ["start end", "end start"]
+  })
+})
+```
+
+## Advanced Usage
+
+### With Stagger Effect
+
+```javascript
+import { animate, scroll, stagger } from "motion"
+
+const cards = document.querySelectorAll(".card")
+
+const animation = animate(cards, {
+  opacity: [0, 1],
+  y: [50, 0]
+}, {
+  duration: 1,
+  delay: stagger(0.1)
+})
+
+scroll(animation, {
+  target: cards[0].closest(".container")
+})
+```
+
+### Multiple Properties
+
+```javascript
+const element = document.querySelector(".element")
+
+const animation = animate(element, {
+  scale: [1, 1.5, 1],
+  rotate: [0, 180, 360],
+  opacity: [0.5, 1, 0.5]
+}, {
+  duration: 1,
+  ease: "linear"
+})
+
+scroll(animation, {
+  target: element
+})
+```
+
+### Cleanup
+
+```javascript
+const cleanup = scroll(animation)
+
+// Remove scroll listener when done
+window.addEventListener("beforeunload", cleanup)
+```
+
+## Performance Tips
+
+1. **Use transform properties** for smooth animations (x, y, scale, rotate)
+2. **Avoid layout-triggering properties** like width, height in scroll animations
+3. **Throttle complex calculations** inside scroll callbacks
+4. **Clean up listeners** when components unmount
+5. **Use `will-change`** for properties that will animate (Motion does this automatically)
+
+## ScrollInfo Interface
+
+```typescript
+interface ScrollInfo {
+  time: number
+  x: AxisScrollInfo
+  y: AxisScrollInfo
+}
+
+interface AxisScrollInfo {
+  current: number        // Current scroll position
+  offset: number[]       // Calculated offsets
+  progress: number       // 0-1 progress
+  scrollLength: number   // Total scrollable length
+  velocity: number       // Scroll velocity
+  targetOffset: number
+  targetLength: number
+  containerLength: number
+}
+```
+
+## Browser Support
+
+- Works in all modern browsers
+- Uses Scroll Timeline API when available
+- Falls back to JavaScript scroll listeners
+- Optimized for performance with requestAnimationFrame

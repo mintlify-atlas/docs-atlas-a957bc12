@@ -1,0 +1,347 @@
+---
+title: Spring Animations
+description: Create natural, physics-based animations with spring dynamics
+---
+
+Spring animations use physics simulation to create natural-feeling motion. Unlike duration-based animations, springs feel more realistic because they have momentum and respond naturally to interruptions.
+
+## Basic Spring
+
+Use spring animations by setting `type: "spring"` in your transition:
+
+```jsx
+<motion.div
+  animate={{ x: 100 }}
+  transition={{ type: "spring" }}
+/>
+```
+
+## Spring Physics
+
+Springs are controlled by three physical properties:
+
+### Stiffness
+
+Controls the spring's strength. Higher values create faster, more aggressive animations.
+
+```jsx
+<motion.div
+  animate={{ x: 100 }}
+  transition={{ 
+    type: "spring",
+    stiffness: 100  // Default: 100
+  }}
+/>
+```
+
+**Common values:**
+- `50` - Gentle, soft spring
+- `100` - Default, balanced spring
+- `300` - Snappy, responsive spring
+- `500+` - Very stiff, almost instant
+
+### Damping
+
+Controls the spring's resistance. Lower values create more oscillation (bounce).
+
+```jsx
+<motion.div
+  animate={{ x: 100 }}
+  transition={{ 
+    type: "spring",
+    stiffness: 300,
+    damping: 10  // Default: 10
+  }}
+/>
+```
+
+**Common values:**
+- `5` - Very bouncy
+- `10` - Default bounce
+- `20` - Minimal bounce
+- `40+` - No bounce (critically damped)
+
+### Mass
+
+Controls the element's weight. Higher values make the animation feel heavier.
+
+```jsx
+<motion.div
+  animate={{ x: 100 }}
+  transition={{ 
+    type: "spring",
+    mass: 1  // Default: 1
+  }}
+/>
+```
+
+## Duration-Based Springs
+
+For more predictable timing, use `visualDuration` and `bounce`:
+
+```jsx
+<motion.div
+  animate={{ x: 100 }}
+  transition={{ 
+    type: "spring",
+    visualDuration: 0.3,  // Duration in seconds
+    bounce: 0.3           // Bounciness (0-1)
+  }}
+/>
+```
+
+This approach is easier to fine-tune than physics parameters:
+
+- `visualDuration` - How long the animation appears to take
+- `bounce` - How bouncy it feels (0 = no bounce, 1 = very bouncy)
+
+<Note>
+  When using `visualDuration` and `bounce`, the spring ignores inherited velocity for more consistent results.
+</Note>
+
+## Real-World Examples
+
+### Button Press
+
+Snappy response with minimal bounce:
+
+```jsx
+<motion.button
+  whileTap={{ scale: 0.95 }}
+  transition={{ 
+    type: "spring",
+    stiffness: 400,
+    damping: 17
+  }}
+>
+  Click me
+</motion.button>
+```
+
+### Modal Entrance
+
+Gentle spring with subtle bounce:
+
+```jsx
+<motion.div
+  initial={{ scale: 0.8, opacity: 0 }}
+  animate={{ scale: 1, opacity: 1 }}
+  transition={{
+    type: "spring",
+    visualDuration: 0.4,
+    bounce: 0.3
+  }}
+>
+  Modal content
+</motion.div>
+```
+
+### Drag Release
+
+Natural momentum with drag interactions:
+
+```jsx
+<motion.div
+  drag
+  dragElastic={0.1}
+  dragTransition={{
+    bounceStiffness: 200,
+    bounceDamping: 40,
+    timeConstant: 750
+  }}
+/>
+```
+
+From `VisualElementDragControls.ts:470-471`:
+```typescript
+const bounceStiffness = dragElastic ? 200 : 1000000
+const bounceDamping = dragElastic ? 40 : 10000000
+```
+
+### Page Transition
+
+Smooth, weighty animation:
+
+```jsx
+<motion.div
+  initial={{ x: 300, opacity: 0 }}
+  animate={{ x: 0, opacity: 1 }}
+  exit={{ x: -300, opacity: 0 }}
+  transition={{
+    type: "spring",
+    mass: 0.8,
+    stiffness: 100,
+    damping: 15
+  }}
+/>
+```
+
+## Spring Presets
+
+Common spring configurations for different use cases:
+
+```jsx
+const springPresets = {
+  // Gentle and soft
+  gentle: {
+    type: "spring",
+    stiffness: 50,
+    damping: 10
+  },
+  
+  // Default balanced
+  default: {
+    type: "spring",
+    stiffness: 100,
+    damping: 10
+  },
+  
+  // Snappy and responsive
+  snappy: {
+    type: "spring",
+    stiffness: 300,
+    damping: 30
+  },
+  
+  // Very bouncy
+  bouncy: {
+    type: "spring",
+    stiffness: 300,
+    damping: 10,
+    mass: 0.8
+  },
+  
+  // Stiff with no bounce
+  stiff: {
+    type: "spring",
+    stiffness: 500,
+    damping: 50
+  }
+}
+```
+
+## Spring Math
+
+Motion uses standard spring physics equations. From `spring/index.ts`:
+
+### Underdamped Spring (bounce)
+
+```typescript
+const dampingRatio = damping / (2 * Math.sqrt(stiffness * mass))
+const undampedAngularFreq = millisecondsToSeconds(Math.sqrt(stiffness / mass))
+const angularFreq = undampedAngularFreq * Math.sqrt(1 - dampingRatio * dampingRatio)
+
+function resolveSpring(t: number) {
+  const envelope = Math.exp(-dampingRatio * undampedAngularFreq * t)
+  return target - envelope * (
+    ((initialVelocity + dampingRatio * undampedAngularFreq * initialDelta) / angularFreq) *
+    Math.sin(angularFreq * t) +
+    initialDelta * Math.cos(angularFreq * t)
+  )
+}
+```
+
+### Critically Damped (no bounce)
+
+```typescript
+function resolveSpring(t: number) {
+  return target - Math.exp(-undampedAngularFreq * t) *
+    (initialDelta + (initialVelocity + undampedAngularFreq * initialDelta) * t)
+}
+```
+
+## Rest Thresholds
+
+Springs complete when motion becomes imperceptible. From `spring/defaults.ts:14-21`:
+
+```typescript
+restSpeed: {
+  granular: 0.01,   // For small movements
+  default: 2,       // For normal movements
+},
+restDelta: {
+  granular: 0.005,  // For small movements
+  default: 0.5,     // For normal movements
+}
+```
+
+For values with delta < 5px, Motion uses granular thresholds for better precision.
+
+## Velocity Inheritance
+
+Springs naturally inherit velocity from interrupted animations:
+
+```jsx
+const controls = useAnimation()
+
+// User drags, then releases - spring continues with momentum
+<motion.div
+  drag
+  dragConstraints={{ left: 0, right: 100 }}
+  dragTransition={{ 
+    type: "spring",
+    stiffness: 100,
+    damping: 10
+  }}
+/>
+```
+
+This creates smooth, uninterrupted motion even when animations are cut short.
+
+## Performance
+
+Spring animations can use either:
+
+1. **JavaScript animation** - For complex values (colors, complex transforms)
+2. **CSS animation** - For GPU-accelerated properties (x, y, scale, rotate, opacity)
+
+Motion automatically converts springs to optimized CSS when possible using `linear()` easing:
+
+```typescript
+// From spring/index.ts:226-240
+toString: () => {
+  const calculatedDuration = Math.min(
+    calcGeneratorDuration(generator),
+    maxGeneratorDuration
+  )
+  
+  const easing = generateLinearEasing(
+    (progress: number) => generator.next(calculatedDuration * progress).value,
+    calculatedDuration,
+    30  // 30 points for smooth approximation
+  )
+  
+  return calculatedDuration + "ms " + easing
+}
+```
+
+## Tips
+
+<Tip>
+  **Start with `visualDuration` and `bounce`** for predictable results, then switch to physics parameters for fine-tuning.
+</Tip>
+
+<Tip>
+  **Match spring to interaction weight** - Use stiffer springs for UI elements, softer springs for page transitions.
+</Tip>
+
+<Tip>
+  **Test on low-end devices** - Spring calculations can be CPU-intensive on older hardware.
+</Tip>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Keyframe Animations" icon="film" href="/guides/keyframe-animations">
+    Create complex multi-step animations
+  </Card>
+  <Card title="Drag Interactions" icon="hand" href="/guides/drag-interactions">
+    Combine springs with drag gestures
+  </Card>
+  <Card title="Performance" icon="gauge-high" href="/guides/performance">
+    Optimize spring animations
+  </Card>
+  <Card title="Scroll Animations" icon="arrows-up-down" href="/guides/scroll-animations">
+    Trigger springs on scroll
+  </Card>
+</CardGroup>

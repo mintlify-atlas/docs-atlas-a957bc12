@@ -1,0 +1,192 @@
+---
+title: useTime()
+description: React hook that returns a MotionValue tracking elapsed time
+---
+
+## Overview
+
+The `useTime()` hook returns a `MotionValue` that automatically updates with the elapsed time in milliseconds since the animation frame loop started. This is useful for creating time-based animations and effects.
+
+## Import
+
+```jsx
+import { useTime } from "motion/react"
+```
+
+## Usage
+
+```jsx
+import { motion, useTime, useTransform } from "motion/react"
+
+function Component() {
+  const time = useTime()
+  const rotate = useTransform(time, [0, 4000], [0, 360], { clamp: false })
+  
+  return (
+    <motion.div style={{ rotate }} />
+  )
+}
+```
+
+## Return Value
+
+<ResponseField name="time" type="MotionValue<number>">
+  A `MotionValue` that updates every frame with the current time in milliseconds. The time represents elapsed time since the frameloop started, not absolute timestamp.
+</ResponseField>
+
+## Examples
+
+### Continuous Rotation
+
+Create a continuously rotating element:
+
+```jsx
+import { motion, useTime, useTransform } from "motion/react"
+
+function LoadingSpinner() {
+  const time = useTime()
+  const rotate = useTransform(
+    time,
+    [0, 1000], // Every second
+    [0, 360],  // Full rotation
+    { clamp: false }
+  )
+  
+  return (
+    <motion.div
+      style={{ rotate }}
+      className="spinner"
+    />
+  )
+}
+```
+
+### Wave Animation
+
+Create a wave effect using sine transformation:
+
+```jsx
+import { motion, useTime, useTransform } from "motion/react"
+
+function Wave() {
+  const time = useTime()
+  
+  const y = useTransform(time, (latest) => {
+    return Math.sin(latest / 1000) * 20
+  })
+  
+  return (
+    <motion.div style={{ y }} />
+  )
+}
+```
+
+### Multiple Synchronized Elements
+
+Synchronize multiple elements with offset timing:
+
+```jsx
+import { motion, useTime, useTransform } from "motion/react"
+
+function SyncedDots() {
+  const time = useTime()
+  
+  const dots = [0, 1, 2].map((i) => {
+    const y = useTransform(time, (latest) => {
+      const offset = i * 200 // Phase offset
+      return Math.sin((latest + offset) / 500) * 10
+    })
+    
+    return <motion.div key={i} style={{ y }} className="dot" />
+  })
+  
+  return <div className="dots">{dots}</div>
+}
+```
+
+### Time-based Counter
+
+Display elapsed seconds:
+
+```jsx
+import { motion, useTime, useTransform } from "motion/react"
+
+function Timer() {
+  const time = useTime()
+  const seconds = useTransform(time, (latest) => 
+    Math.floor(latest / 1000)
+  )
+  
+  return (
+    <motion.div>{seconds}</motion.div>
+  )
+}
+```
+
+### Pulsating Effect
+
+Create a scale pulse animation:
+
+```jsx
+import { motion, useTime, useTransform } from "motion/react"
+
+function PulseIcon() {
+  const time = useTime()
+  
+  const scale = useTransform(time, (latest) => {
+    const pulse = Math.sin(latest / 500) // Pulse every 500ms
+    return 1 + pulse * 0.1 // Scale between 0.9 and 1.1
+  })
+  
+  return (
+    <motion.div style={{ scale }} className="icon" />
+  )
+}
+```
+
+## Performance
+
+<Note>
+  The `useTime()` hook updates every animation frame. When using it with `useTransform()`, Motion automatically optimizes updates to only occur when necessary.
+</Note>
+
+### Best Practices
+
+<AccordionGroup>
+  <Accordion title="Combine with useTransform">
+    Use `useTransform()` to derive animated values from time rather than using `useEffect` with state updates. This ensures smooth, performant animations.
+  </Accordion>
+
+  <Accordion title="Avoid heavy computations">
+    Keep transform functions lightweight. Heavy computations in transform callbacks can cause frame drops since they run every frame.
+  </Accordion>
+
+  <Accordion title="Share time values">
+    When multiple elements need time-based animations, create one `useTime()` instance and share it rather than creating multiple instances.
+  </Accordion>
+</AccordionGroup>
+
+## Implementation Details
+
+- Uses `useMotionValue()` internally to create the time value
+- Subscribes to the animation frame loop via `useAnimationFrame()`
+- Automatically cleans up subscriptions when component unmounts
+- Time value represents elapsed time, not absolute timestamp
+- Frame updates are synchronized with browser's requestAnimationFrame
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="useTransform" href="/api/use-transform" icon="arrow-right-arrow-left">
+    Transform motion values
+  </Card>
+  <Card title="useMotionValue" href="/api/use-motion-value" icon="wave-pulse">
+    Create motion values
+  </Card>
+  <Card title="MotionValue" href="/api/motion-value" icon="database">
+    MotionValue API reference
+  </Card>
+  <Card title="Performance Guide" href="/guides/performance" icon="gauge-high">
+    Optimize animations
+  </Card>
+</CardGroup>

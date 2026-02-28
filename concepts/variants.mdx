@@ -1,0 +1,430 @@
+---
+title: Variants
+description: Use variants to organize animation states, orchestrate complex animations, and propagate animations through component trees
+---
+
+Variants are named animation states that let you organize animations and coordinate them across multiple components. They're one of Motion's most powerful features for creating complex, orchestrated animations.
+
+## Basic Variants
+
+Define variants as an object with named animation states:
+
+```jsx
+import { motion } from "framer-motion"
+
+function Component() {
+  const [isActive, setIsActive] = useState(false)
+  
+  const variants = {
+    active: { 
+      backgroundColor: "#00f" 
+    },
+    inactive: { 
+      backgroundColor: "#f00" 
+    }
+  }
+  
+  return (
+    <motion.div
+      variants={variants}
+      initial="inactive"
+      animate={isActive ? "active" : "inactive"}
+      onClick={() => setIsActive(!isActive)}
+      style={{ width: 100, height: 100 }}
+    />
+  )
+}
+```
+
+The `animate` prop accepts a variant name (string) instead of animation values.
+
+## Propagation
+
+Variants automatically propagate down the component tree:
+
+```jsx
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1 }
+}
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: { y: 0, opacity: 1 }
+}
+
+function List() {
+  return (
+    <motion.ul
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      <motion.li variants={itemVariants}>Item 1</motion.li>
+      <motion.li variants={itemVariants}>Item 2</motion.li>
+      <motion.li variants={itemVariants}>Item 3</motion.li>
+    </motion.ul>
+  )
+}
+```
+
+When the `ul` animates to "visible", all children with matching variant names automatically animate to their "visible" states.
+
+## Orchestration
+
+Control animation timing across variants:
+
+```jsx
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      delayChildren: 0.3,
+      staggerChildren: 0.2
+    }
+  }
+}
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: {
+      duration: 0.5
+    }
+  }
+}
+```
+
+Orchestration options:
+- `delayChildren`: Delay before children animate
+- `staggerChildren`: Delay between each child's animation
+- `when`: Control when children animate (`"beforeChildren"` or `"afterChildren"`)
+
+## Gesture Variants
+
+Variants work seamlessly with gesture events:
+
+```jsx
+const buttonVariants = {
+  rest: { scale: 1 },
+  hover: { scale: 1.1 },
+  pressed: { scale: 0.95 }
+}
+
+function Button() {
+  return (
+    <motion.button
+      variants={buttonVariants}
+      initial="rest"
+      whileHover="hover"
+      whileTap="pressed"
+    >
+      Click me
+    </motion.button>
+  )
+}
+```
+
+### Gesture Propagation
+
+Gesture variants also propagate to children:
+
+```jsx
+function App() {
+  return (
+    <motion.div whileTap="pressed">
+      <motion.div
+        variants={{
+          pressed: {
+            scale: 0.5,
+            backgroundColor: "rgba(0, 255, 0, 0.5)"
+          }
+        }}
+        style={{
+          width: 100,
+          height: 100,
+          background: "rgba(255, 0, 0, 1)"
+        }}
+      />
+    </motion.div>
+  )
+}
+```
+
+When the parent is tapped, the child animates to its "pressed" variant.
+
+## Dynamic Variants
+
+Variants can be functions that receive custom data:
+
+```jsx
+const itemVariants = {
+  hidden: { opacity: 0 },
+  visible: (custom) => ({
+    opacity: 1,
+    transition: { delay: custom * 0.2 }
+  })
+}
+
+function List() {
+  return (
+    <motion.ul initial="hidden" animate="visible">
+      {items.map((item, i) => (
+        <motion.li
+          key={item.id}
+          custom={i}
+          variants={itemVariants}
+        >
+          {item.name}
+        </motion.li>
+      ))}
+    </motion.ul>
+  )
+}
+```
+
+The `custom` prop passes data to variant functions.
+
+## With Animation Controls
+
+Variants work with imperative controls:
+
+```jsx
+import { useAnimationControls } from "framer-motion"
+
+function Component() {
+  const controls = useAnimationControls()
+  
+  const variants = {
+    visible: { opacity: 1 },
+    hidden: { opacity: 0 }
+  }
+  
+  return (
+    <>
+      <button onClick={() => controls.start("visible")}>Show</button>
+      <button onClick={() => controls.start("hidden")}>Hide</button>
+      <motion.div
+        variants={variants}
+        animate={controls}
+      />
+    </>
+  )
+}
+```
+
+## Exit Variants
+
+Define exit animations for AnimatePresence:
+
+```jsx
+import { motion, AnimatePresence } from "framer-motion"
+
+const variants = {
+  initial: { opacity: 0, x: -100 },
+  animate: { opacity: 1, x: 0 },
+  exit: { opacity: 0, x: 100 }
+}
+
+function Component() {
+  const [isVisible, setIsVisible] = useState(true)
+  
+  return (
+    <AnimatePresence>
+      {isVisible && (
+        <motion.div
+          variants={variants}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+        />
+      )}
+    </AnimatePresence>
+  )
+}
+```
+
+## Variant Labels
+
+Animate to multiple variants simultaneously:
+
+```jsx
+const variants = {
+  position: { x: 100 },
+  color: { backgroundColor: "#00f" }
+}
+
+<motion.div
+  variants={variants}
+  animate={["position", "color"]}
+/>
+```
+
+## Transition Overrides
+
+Override variant transitions:
+
+```jsx
+<motion.div
+  variants={variants}
+  animate="visible"
+  transition={{ duration: 2 }} // Overrides variant transition
+/>
+```
+
+## Best Practices
+
+### Keep Variants Consistent
+
+Use the same variant names across parent and child components:
+
+<CodeGroup>
+```jsx Good
+const parent = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1 }
+}
+
+const child = {
+  hidden: { y: 20 },
+  visible: { y: 0 }
+}
+```
+
+```jsx Bad
+const parent = {
+  hide: { opacity: 0 },
+  show: { opacity: 1 }
+}
+
+const child = {
+  hidden: { y: 20 },
+  visible: { y: 0 }
+}
+```
+</CodeGroup>
+
+### Define Variants Outside Components
+
+Avoid recreating variant objects on every render:
+
+<CodeGroup>
+```jsx Good
+const variants = {
+  visible: { opacity: 1 },
+  hidden: { opacity: 0 }
+}
+
+function Component() {
+  return <motion.div variants={variants} />
+}
+```
+
+```jsx Bad
+function Component() {
+  const variants = {
+    visible: { opacity: 1 },
+    hidden: { opacity: 0 }
+  }
+  return <motion.div variants={variants} />
+}
+```
+</CodeGroup>
+
+Unless the variants need to be dynamic based on props or state.
+
+### Use Meaningful Names
+
+Choose descriptive variant names:
+
+```jsx
+// Good
+const variants = {
+  expanded: { height: "auto" },
+  collapsed: { height: 0 }
+}
+
+// Less clear
+const variants = {
+  state1: { height: "auto" },
+  state2: { height: 0 }
+}
+```
+
+## Advanced Example
+
+Here's a complete example with staggered list animations:
+
+```jsx
+import { motion } from "framer-motion"
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      delayChildren: 0.2,
+      staggerChildren: 0.1
+    }
+  },
+  exit: {
+    opacity: 0,
+    transition: {
+      staggerChildren: 0.05,
+      staggerDirection: -1
+    }
+  }
+}
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: {
+      type: "spring",
+      stiffness: 300,
+      damping: 24
+    }
+  },
+  exit: { y: -20, opacity: 0 }
+}
+
+function StaggeredList({ items }) {
+  return (
+    <motion.ul
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+    >
+      {items.map((item) => (
+        <motion.li key={item.id} variants={itemVariants">
+          {item.text}
+        </motion.li>
+      ))}
+    </motion.ul>
+  )
+}
+```
+
+## API Reference
+
+For complete API details, see:
+- [Variants Type Definition](/api/types/variants)
+- [Motion Props](/api/types/motion-props)
+- [Transition Options](/api/types/transition)
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Gestures" href="/concepts/gestures" icon="hand-pointer">
+    Add interactive animations
+  </Card>
+  <Card title="AnimatePresence" href="/react/animate-presence" icon="eye-slash">
+    Animate components entering and leaving
+  </Card>
+</CardGroup>

@@ -1,0 +1,383 @@
+---
+title: 'Shared Layout Animations'
+description: 'Animate elements between different components'
+icon: 'arrows-left-right'
+---
+
+## Overview
+
+Shared layout animations allow you to animate elements between different components. When a component with a `layoutId` is removed and another with the same `layoutId` is added elsewhere, they will visually animate between each other.
+
+## Props
+
+### layoutId
+
+Enable shared layout transitions between different components with the same `layoutId`.
+
+```tsx
+layoutId?: string
+```
+
+```jsx
+{items.map(item => (
+  <motion.li key={item.id} layout>
+    {item.name}
+    {item.isSelected && <motion.div layoutId="underline" />}
+  </motion.li>
+))}
+```
+
+## How It Works
+
+When a component with a `layoutId` is removed from the React tree and another component with the same `layoutId` is added elsewhere:
+
+1. The new component animates from the previous component's bounding box
+2. It inherits the previous component's latest animated values
+3. If the previous component remains in the tree, they crossfade
+
+## Crossfading
+
+### layoutCrossfade
+
+Control whether shared layout elements crossfade.
+
+```tsx
+layoutCrossfade?: boolean // default: true
+```
+
+```jsx
+// Disable crossfade
+<motion.div layoutId="box" layoutCrossfade={false} />
+```
+
+When `false`, the element takes its default opacity throughout the animation.
+
+## Examples
+
+### Animated underline
+
+```jsx
+function Tabs() {
+  const [selected, setSelected] = useState(0)
+  const tabs = ['Home', 'About', 'Contact']
+
+  return (
+    <div style={{ display: 'flex', gap: 16 }">
+      {tabs.map((tab, i) => (
+        <div
+          key={i}
+          onClick={() => setSelected(i)}
+          style={{
+            padding: '8px 16px',
+            position: 'relative',
+            cursor: 'pointer'
+          }}
+        >
+          {tab}
+          {selected === i && (
+            <motion.div
+              layoutId="underline"
+              style={{
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: 2,
+                backgroundColor: '#007bff'
+              }}
+            />
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+```
+
+### Image gallery lightbox
+
+```jsx
+function Gallery() {
+  const [selected, setSelected] = useState(null)
+
+  return (
+    <>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }">
+        {images.map((image, i) => (
+          <motion.img
+            key={i}
+            layoutId={`image-${i}`}
+            src={image}
+            onClick={() => setSelected(i)}
+            style={{
+              width: '100%',
+              borderRadius: 8,
+              cursor: 'pointer'
+            }}
+          />
+        ))}
+      </div>
+      
+      {selected !== null && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0,0,0,0.8)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+          onClick={() => setSelected(null)}
+        >
+          <motion.img
+            layoutId={`image-${selected}`}
+            src={images[selected]}
+            style={{ maxWidth: '90%', maxHeight: '90%', borderRadius: 8 }}
+          />
+        </div>
+      )}
+    </>
+  )
+}
+```
+
+### Card expansion
+
+```jsx
+function CardList() {
+  const [selected, setSelected] = useState(null)
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }">
+      {items.map((item) => (
+        <motion.div
+          key={item.id}
+          layoutId={item.id}
+          onClick={() => setSelected(item.id)}
+          style={{
+            padding: 20,
+            backgroundColor: '#f0f0f0',
+            borderRadius: 12,
+            cursor: 'pointer'
+          }}
+        >
+          <h3>{item.title}</h3>
+          <p>{item.summary}</p>
+        </motion.div>
+      ))}
+      
+      {selected && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+          onClick={() => setSelected(null)}
+        >
+          <motion.div
+            layoutId={selected}
+            style={{
+              padding: 40,
+              backgroundColor: 'white',
+              borderRadius: 12,
+              maxWidth: 600
+            }}
+          >
+            <h2>{items.find(i => i.id === selected).title}</h2>
+            <p>{items.find(i => i.id === selected).fullContent}</p>
+          </motion.div>
+        </div>
+      )}
+    </div>
+  )
+}
+```
+
+### Switch toggle
+
+```jsx
+function Switch() {
+  const [isOn, setIsOn] = useState(false)
+
+  return (
+    <div
+      onClick={() => setIsOn(!isOn)}
+      style={{
+        width: 60,
+        height: 30,
+        backgroundColor: isOn ? '#007bff' : '#ccc',
+        borderRadius: 15,
+        padding: 3,
+        display: 'flex',
+        justifyContent: isOn ? 'flex-end' : 'flex-start',
+        cursor: 'pointer'
+      }}
+    >
+      <motion.div
+        layoutId="switch-handle"
+        style={{
+          width: 24,
+          height: 24,
+          backgroundColor: 'white',
+          borderRadius: '50%'
+        }}
+      />
+    </div>
+  )
+}
+```
+
+### Navigation highlight
+
+```jsx
+function Navigation() {
+  const [active, setActive] = useState('home')
+  const links = [
+    { id: 'home', label: 'Home' },
+    { id: 'about', label: 'About' },
+    { id: 'services', label: 'Services' },
+    { id: 'contact', label: 'Contact' }
+  ]
+
+  return (
+    <nav style={{ display: 'flex', gap: 8, backgroundColor: '#f0f0f0', padding: 8, borderRadius: 8 }">
+      {links.map(link => (
+        <div
+          key={link.id}
+          onClick={() => setActive(link.id)}
+          style={{
+            padding: '8px 16px',
+            position: 'relative',
+            cursor: 'pointer',
+            color: active === link.id ? 'white' : 'black'
+          }}
+        >
+          {active === link.id && (
+            <motion.div
+              layoutId="nav-bg"
+              style={{
+                position: 'absolute',
+                inset: 0,
+                backgroundColor: '#007bff',
+                borderRadius: 6,
+                zIndex: -1
+              }}
+            />
+          )}
+          {link.label}
+        </div>
+      ))}
+    </nav>
+  )
+}
+```
+
+### List item transfer
+
+```jsx
+function Lists() {
+  const [list1, setList1] = useState([1, 2, 3])
+  const [list2, setList2] = useState([4, 5, 6])
+
+  const moveToList2 = (item) => {
+    setList1(list1.filter(i => i !== item))
+    setList2([...list2, item])
+  }
+
+  const moveToList1 = (item) => {
+    setList2(list2.filter(i => i !== item))
+    setList1([...list1, item])
+  }
+
+  return (
+    <div style={{ display: 'flex', gap: 40 }">
+      <div>
+        <h3>List 1</h3>
+        {list1.map(item => (
+          <motion.div
+            key={item}
+            layoutId={`item-${item}`}
+            onClick={() => moveToList2(item)}
+            style={{
+              padding: 16,
+              margin: 8,
+              backgroundColor: '#007bff',
+              color: 'white',
+              borderRadius: 8,
+              cursor: 'pointer'
+            }}
+          >
+            Item {item}
+          </motion.div>
+        ))}
+      </div>
+      
+      <div>
+        <h3>List 2</h3>
+        {list2.map(item => (
+          <motion.div
+            key={item}
+            layoutId={`item-${item}`}
+            onClick={() => moveToList1(item)}
+            style={{
+              padding: 16,
+              margin: 8,
+              backgroundColor: '#28a745',
+              color: 'white',
+              borderRadius: 8,
+              cursor: 'pointer'
+            }}
+          >
+            Item {item}
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  )
+}
+```
+
+### Page transitions
+
+```jsx
+function PageTransition() {
+  const [page, setPage] = useState('home')
+
+  return (
+    <div>
+      <nav>
+        <button onClick={() => setPage('home')}>Home</button>
+        <button onClick={() => setPage('about')}>About</button>
+      </nav>
+      
+      {page === 'home' && (
+        <motion.div layoutId="page-content" style={{ padding: 40 }">
+          <h1>Home Page</h1>
+          <p>Welcome to the home page</p>
+        </motion.div>
+      )}
+      
+      {page === 'about' && (
+        <motion.div layoutId="page-content" style={{ padding: 40 }">
+          <h1>About Page</h1>
+          <p>Learn more about us</p>
+        </motion.div>
+      )}
+    </div>
+  )
+}
+```
+
+## Notes
+
+- `layoutId` must be unique within the rendered tree at any given time
+- Works seamlessly with AnimatePresence for exit animations
+- Inherits animated values from the previous component
+- Crossfades by default when both elements exist simultaneously
+- Combine with `layout` prop for full layout animation support
+- Performance is optimized using transforms

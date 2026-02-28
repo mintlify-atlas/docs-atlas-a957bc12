@@ -1,0 +1,312 @@
+---
+title: MotionConfig
+description: Configure default settings for all child motion components
+---
+
+The `MotionConfig` component sets configuration options that are inherited by all child `motion` components. Use it to set default transitions, reduced motion preferences, and more.
+
+## Usage
+
+```jsx
+import { motion, MotionConfig } from "motion/react"
+
+export function App() {
+  return (
+    <MotionConfig transition={{ type: "spring", bounce: 0.25 }">
+      <motion.div animate={{ x: 100 }} />
+      <motion.div animate={{ scale: 2 }} />
+      {/* Both will use spring transition */}
+    </MotionConfig>
+  )
+}
+```
+
+## Props
+
+<ParamField path="children" type="ReactNode">
+  React children. All `motion` components will inherit the configuration.
+
+  ```jsx
+  <MotionConfig transition={{ duration: 0.5 }">
+    <motion.div animate={{ x: 100 }} />
+  </MotionConfig>
+  ```
+</ParamField>
+
+<ParamField path="transition" type="Transition">
+  Default transition for all child animations. Can be overridden by individual components.
+
+  ```jsx
+  const spring = {
+    type: "spring",
+    damping: 20,
+    stiffness: 300
+  }
+
+  <MotionConfig transition={spring">
+    <motion.div animate={{ x: 100 }} />
+    {/* Override for this component */}
+    <motion.div 
+      animate={{ y: 100 }}
+      transition={{ type: "tween" }}
+    />
+  </MotionConfig>
+  ```
+</ParamField>
+
+<ParamField path="reducedMotion" type="always | never or user">
+  Control motion behavior based on user preferences:
+  
+  - `"user"`: Respect `prefers-reduced-motion` setting (default)
+  - `"always"`: Always reduce motion
+  - `"never"`: Never reduce motion
+
+  When reduced motion is active, animations are replaced with instant transitions.
+
+  ```jsx
+  <MotionConfig reducedMotion="always">
+    {/* All animations will be instant */}
+    <motion.div animate={{ x: 100 }} />
+  </MotionConfig>
+  ```
+</ParamField>
+
+<ParamField path="skipAnimations" type="boolean">
+  If `true`, all animations are skipped and values are set instantly. Useful for testing or visual regression.
+
+  ```jsx
+  <MotionConfig skipAnimations={process.env.NODE_ENV === 'test'">
+    <motion.div animate={{ x: 100 }} />
+  </MotionConfig>
+  ```
+</ParamField>
+
+<ParamField path="nonce" type="string">
+  A custom `nonce` attribute for Content Security Policy (CSP). Used when Motion injects styles.
+
+  ```jsx
+  <MotionConfig nonce="random-nonce-value">
+    <motion.div />
+  </MotionConfig>
+  ```
+</ParamField>
+
+<ParamField path="isValidProp" type="(key: string) => boolean">
+  A function to determine if a prop should be forwarded to the DOM element. Use with custom elements or web components.
+
+  ```jsx
+  const isValidProp = (key: string) => 
+    !key.startsWith('data-motion')
+
+  <MotionConfig isValidProp={isValidProp">
+    <motion.div />
+  </MotionConfig>
+  ```
+</ParamField>
+
+<ParamField path="transformPagePoint" type="(point: Point) => Point">
+  Transform pointer coordinates. Used internally by Framer for zoom/pan canvas.
+
+  ```jsx
+  const transformPagePoint = (point) => ({
+    x: point.x / scale,
+    y: point.y / scale
+  })
+
+  <MotionConfig transformPagePoint={transformPagePoint">
+    <motion.div drag />
+  </MotionConfig>
+  ```
+</ParamField>
+
+## Examples
+
+### Global Spring Transition
+
+```jsx
+function App() {
+  const springTransition = {
+    type: "spring",
+    stiffness: 300,
+    damping: 30
+  }
+
+  return (
+    <MotionConfig transition={springTransition">
+      <motion.button whileHover={{ scale: 1.1 }">
+        Hover me
+      </motion.button>
+      <motion.div animate={{ x: 100 }">
+        I'll spring
+      </motion.div>
+    </MotionConfig>
+  )
+}
+```
+
+### Reduced Motion Support
+
+```jsx
+function App() {
+  return (
+    <MotionConfig reducedMotion="user">
+      {/* Users with prefers-reduced-motion will see instant transitions */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        Accessible animations
+      </motion.div>
+    </MotionConfig>
+  )
+}
+```
+
+### Testing Mode
+
+```jsx
+function App() {
+  const isTest = process.env.NODE_ENV === 'test'
+
+  return (
+    <MotionConfig skipAnimations={isTest">
+      {/* In tests, all animations are instant */}
+      <motion.div animate={{ x: 100 }} />
+    </MotionConfig>
+  )
+}
+```
+
+### Nested Configuration
+
+```jsx
+function App() {
+  return (
+    <MotionConfig transition={{ duration: 1 }">
+      {/* Uses 1s duration */}
+      <motion.div animate={{ x: 100 }} />
+      
+      <MotionConfig transition={{ duration: 0.2 }">
+        {/* Overrides to 0.2s duration */}
+        <motion.div animate={{ y: 100 }} />
+      </MotionConfig>
+    </MotionConfig>
+  )
+}
+```
+
+### Different Transitions per Section
+
+```jsx
+function App() {
+  return (
+    <>
+      <MotionConfig transition={{ type: "spring" }">
+        <header>
+          {/* Spring animations */}
+          <motion.nav animate={{ y: 0 }} />
+        </header>
+      </MotionConfig>
+
+      <MotionConfig transition={{ type: "tween", ease: "easeOut" }">
+        <main>
+          {/* Tween animations */}
+          <motion.article animate={{ opacity: 1 }} />
+        </main>
+      </MotionConfig>
+    </>
+  )
+}
+```
+
+### CSP with Nonce
+
+```jsx
+function App({ nonce }) {
+  return (
+    <MotionConfig nonce={nonce">
+      <motion.div animate={{ x: 100 }} />
+    </MotionConfig>
+  )
+}
+
+// In your HTML
+// <meta http-equiv="Content-Security-Policy" 
+//       content="style-src 'nonce-random-value'">
+```
+
+## TypeScript
+
+```typescript
+import { MotionConfig } from "motion/react"
+import type { MotionConfigProps } from "motion/react"
+
+function Component(props: MotionConfigProps) {
+  return <MotionConfig {...props} />
+}
+
+// With custom transition type
+import type { Transition } from "motion/react"
+
+const transition: Transition = {
+  type: "spring",
+  stiffness: 300
+}
+
+<MotionConfig transition={transition">
+  {/* ... */}
+</MotionConfig>
+```
+
+## Inheritance
+
+`MotionConfig` values are inherited by child `MotionConfig` components:
+
+```jsx
+<MotionConfig transition={{ duration: 1 }">
+  <MotionConfig transition={{ type: "spring" }">
+    {/* Merges both configs */}
+    {/* Uses spring type but inherits other parent settings */}
+  </MotionConfig>
+</MotionConfig>
+```
+
+Child configurations override parent configurations for the same properties.
+
+## Performance
+
+`MotionConfig` creates a new context when its props change. To avoid unnecessary re-renders:
+
+- Memoize transition objects
+- Keep `MotionConfig` high in the tree
+- Don't update props unnecessarily
+
+```jsx
+// Good - memoized
+const transition = useMemo(() => ({ 
+  type: "spring",
+  stiffness: 300 
+}), [])
+
+<MotionConfig transition={transition">
+  {/* ... */}
+</MotionConfig>
+
+// Bad - creates new object on every render
+<MotionConfig transition={{ type: "spring", stiffness: 300 }">
+  {/* ... */}
+</MotionConfig>
+```
+
+## Notes
+
+- Individual component props always override `MotionConfig` settings
+- `isStatic` prop is locked on mount and cannot change
+- Nested `MotionConfig` components merge their settings
+- Only affects descendant `motion` components, not ancestors or siblings
+
+## Related
+
+- [motion](/api/motion) - Core animation component
+- [transitions guide](/guides/transitions) - Learn about transition types
+- [accessibility guide](/guides/accessibility) - Implementing reduced motion

@@ -1,0 +1,340 @@
+---
+title: transform()
+description: Map a value from one range to another with easing and interpolation
+---
+
+## Overview
+
+The `transform()` function maps numbers from one range to another. It's useful for creating relationships between values, like scroll position to opacity, or mouse position to rotation.
+
+## Import
+
+```jsx
+import { transform } from "motion"
+```
+
+## Signatures
+
+### Immediate Transformation
+
+Transform a value immediately:
+
+```typescript
+transform<T>(
+  inputValue: number,
+  inputRange: number[],
+  outputRange: T[],
+  options?: TransformOptions<T>
+): T
+```
+
+### Transformer Function
+
+Create a reusable transform function:
+
+```typescript
+transform<T>(
+  inputRange: number[],
+  outputRange: T[],
+  options?: TransformOptions<T>
+): (inputValue: number) => T
+```
+
+## Parameters
+
+<ParamField path="inputValue" type="number">
+  The value to transform (only in immediate mode)
+</ParamField>
+
+<ParamField path="inputRange" type="number[]" required>
+  An array of numbers defining the input range. Must be the same length as `outputRange`. Can be ascending or descending.
+</ParamField>
+
+<ParamField path="outputRange" type="T[]" required>
+  An array of values defining the output range. Supports:
+  - Numbers
+  - Colors (hex, rgb, rgba, hsl, hsla)
+  - Strings with numbers (e.g., "10px", "45deg")
+  - Complex strings (e.g., "0px 5px 10px rgba(0,0,0,0.5)")
+</ParamField>
+
+<ParamField path="options" type="TransformOptions<T>">
+  Optional configuration object
+</ParamField>
+
+## Options
+
+```typescript
+interface TransformOptions<T> {
+  clamp?: boolean
+  ease?: EasingFunction | EasingFunction[]
+  mixer?: (from: T, to: T) => (v: number) => any
+}
+```
+
+<ParamField path="clamp" type="boolean" default="true">
+  Whether to clamp the output value within the output range. Set to `false` to allow extrapolation beyond the defined ranges.
+</ParamField>
+
+<ParamField path="ease" type="EasingFunction or EasingFunction[]">
+  Easing function(s) to apply between values. If an array, must be one item shorter than the ranges (one easing per transition).
+</ParamField>
+
+<ParamField path="mixer" type="MixerFactory<T>">
+  Custom function to interpolate between output values. Useful for custom value types.
+</ParamField>
+
+## Examples
+
+### Basic Number Transformation
+
+Map scroll position to opacity:
+
+```jsx
+import { transform } from "motion"
+
+// Immediate mode
+const opacity = transform(150, [0, 300], [0, 1])
+// opacity = 0.5
+
+// Function mode
+const scrollToOpacity = transform([0, 300], [0, 1])
+const opacity1 = scrollToOpacity(0)    // 0
+const opacity2 = scrollToOpacity(150)  // 0.5
+const opacity3 = scrollToOpacity(300)  // 1
+```
+
+### Color Transformation
+
+Interpolate between colors:
+
+```jsx
+import { transform } from "motion"
+
+const scrollToColor = transform(
+  [0, 100],
+  ["#ff0000", "#0000ff"]
+)
+
+const color = scrollToColor(50)
+// Returns: "rgba(128, 0, 128, 1)"
+```
+
+### Multiple Breakpoints
+
+Create complex relationships with multiple stops:
+
+```jsx
+import { transform } from "motion"
+
+const scaleFromScroll = transform(
+  [0, 100, 200, 300],
+  [0.8, 1, 1, 0.8]
+)
+
+const scale1 = scaleFromScroll(0)    // 0.8
+const scale2 = scaleFromScroll(100)  // 1
+const scale3 = scaleFromScroll(200)  // 1
+const scale4 = scaleFromScroll(300)  // 0.8
+```
+
+### With Easing
+
+Apply easing functions for non-linear transitions:
+
+```jsx
+import { transform } from "motion"
+
+const easeOut = transform(
+  [0, 100],
+  [0, 100],
+  { ease: (t) => 1 - Math.pow(1 - t, 3) }
+)
+
+const value = easeOut(50)
+// Applies ease-out cubic easing
+```
+
+### Multiple Easings
+
+Different easing for each segment:
+
+```jsx
+import { transform } from "motion"
+
+const multiEase = transform(
+  [0, 50, 100],
+  [0, 100, 0],
+  {
+    ease: [
+      (t) => t * t,           // Ease in for first half
+      (t) => 1 - Math.pow(1 - t, 2)  // Ease out for second half
+    ]
+  }
+)
+```
+
+### Without Clamping
+
+Allow extrapolation beyond defined ranges:
+
+```jsx
+import { transform } from "motion"
+
+const extrapolate = transform(
+  [0, 100],
+  [0, 1],
+  { clamp: false }
+)
+
+extrapolate(-50)  // -0.5 (extrapolated)
+extrapolate(150)  // 1.5 (extrapolated)
+```
+
+### String Transformations
+
+Interpolate strings with units:
+
+```jsx
+import { transform } from "motion"
+
+const sizeToPadding = transform(
+  [0, 100],
+  ["0px", "50px"]
+)
+
+const padding = sizeToPadding(50)
+// Returns: "25px"
+```
+
+### With useTransform
+
+Combine with motion values:
+
+```jsx
+import { motion, useScroll, useTransform } from "motion/react"
+
+function Component() {
+  const { scrollY } = useScroll()
+  
+  const opacity = useTransform(
+    scrollY,
+    [0, 300],
+    [1, 0]
+  )
+  
+  const scale = useTransform(
+    scrollY,
+    [0, 300],
+    [1, 0.8]
+  )
+  
+  return (
+    <motion.div
+      style={{ opacity, scale }}
+    />
+  )
+}
+```
+
+## Reverse Ranges
+
+Input ranges can be descending (reversed):
+
+```jsx
+import { transform } from "motion"
+
+// Descending input range is automatically reversed
+const reverseTransform = transform(
+  [200, 100, 0],  // Descending
+  [0, 0.5, 1]
+)
+
+reverseTransform(200)  // 0
+reverseTransform(100)  // 0.5
+reverseTransform(0)    // 1
+```
+
+## Advanced Usage
+
+### Custom Mixer
+
+Provide custom interpolation logic:
+
+```tsx
+import { transform } from "motion"
+
+const customMixer = (from: any, to: any) => {
+  return (progress: number) => {
+    // Custom interpolation logic
+    return from + (to - from) * progress
+  }
+}
+
+const customTransform = transform(
+  [0, 100],
+  [0, 100],
+  { mixer: customMixer }
+)
+```
+
+### Complex Value Interpolation
+
+Interpolate complex CSS values:
+
+```jsx
+import { transform } from "motion"
+
+const shadowTransform = transform(
+  [0, 100],
+  [
+    "0px 0px 0px rgba(0,0,0,0)",
+    "0px 10px 20px rgba(0,0,0,0.3)"
+  ]
+)
+
+const shadow = shadowTransform(50)
+// Returns interpolated box-shadow value
+```
+
+## Return Types
+
+The return type matches the output range type:
+
+- `number[]` outputs return `number`
+- `string[]` outputs return `string`
+- Mixed types are supported via union types
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Match range lengths">
+    Always ensure `inputRange` and `outputRange` have the same length. The function will throw an error if they don't match.
+  </Accordion>
+
+  <Accordion title="Use linear input ranges">
+    Input ranges should be strictly ascending or descending. Non-linear input ranges may produce unexpected results.
+  </Accordion>
+
+  <Accordion title="Reuse transform functions">
+    Create transform functions once and reuse them rather than calling `transform()` repeatedly with the same ranges.
+  </Accordion>
+
+  <Accordion title="Clamp by default">
+    Keep clamping enabled unless you specifically need extrapolation. This prevents unexpected values outside your defined range.
+  </Accordion>
+</AccordionGroup>
+
+## Related Functions
+
+<CardGroup cols={2}>
+  <Card title="interpolate" href="/api/interpolate" icon="wave-sine">
+    Lower-level interpolation function
+  </Card>
+  <Card title="useTransform" href="/api/use-transform" icon="arrow-right-arrow-left">
+    Transform motion values in React
+  </Card>
+  <Card title="useScroll" href="/api/use-scroll" icon="arrow-down">
+    Track scroll position
+  </Card>
+</CardGroup>

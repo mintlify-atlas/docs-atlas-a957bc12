@@ -1,122 +1,169 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "Motion",
+  "theme": "palm",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#FF2B6E",
+    "light": "#FF4FBA",
+    "dark": "#8D30FF"
   },
-  "favicon": "/favicon.svg",
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/motiondivision/motion"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/motiondivision/motion"
+    }
+  },
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Documentation",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Getting Started",
             "pages": [
-              "index",
-              "quickstart",
-              "development"
+              "introduction",
+              "installation",
+              "quickstart"
             ]
           },
           {
-            "group": "Customization",
+            "group": "Core Concepts",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              "concepts/animation-basics",
+              "concepts/motion-values",
+              "concepts/animation-controls",
+              "concepts/variants",
+              "concepts/gestures"
             ]
           },
           {
-            "group": "Writing content",
+            "group": "React",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
+              "react/overview",
+              "react/motion-components",
+              "react/animate-presence",
+              "react/layout-animations",
+              "react/hooks"
             ]
           },
           {
-            "group": "AI tools",
+            "group": "JavaScript",
             "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "javascript/overview",
+              "javascript/animate",
+              "javascript/scroll",
+              "javascript/inview",
+              "javascript/timeline"
+            ]
+          },
+          {
+            "group": "Vue",
+            "pages": [
+              "vue/overview",
+              "vue/getting-started"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/spring-animations",
+              "guides/keyframe-animations",
+              "guides/scroll-animations",
+              "guides/drag-interactions",
+              "guides/layout-transitions",
+              "guides/performance",
+              "guides/accessibility"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "API Reference",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Components",
             "pages": [
-              "api-reference/introduction"
+              "api/motion",
+              "api/animate-presence",
+              "api/layout-group",
+              "api/motion-config",
+              "api/lazy-motion",
+              "api/reorder"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Animation",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "api/animate",
+              "api/animation-controls",
+              "api/use-animate",
+              "api/use-animation",
+              "api/animate-visual-element"
+            ]
+          },
+          {
+            "group": "Motion Values",
+            "pages": [
+              "api/use-motion-value",
+              "api/use-transform",
+              "api/use-spring",
+              "api/use-velocity",
+              "api/motion-value"
+            ]
+          },
+          {
+            "group": "Gestures",
+            "pages": [
+              "api/drag",
+              "api/hover",
+              "api/tap",
+              "api/pan",
+              "api/focus"
+            ]
+          },
+          {
+            "group": "Scroll",
+            "pages": [
+              "api/use-scroll",
+              "api/scroll",
+              "api/use-in-view",
+              "api/inview"
+            ]
+          },
+          {
+            "group": "Layout",
+            "pages": [
+              "api/layout-animations",
+              "api/shared-layout",
+              "api/use-presence"
+            ]
+          },
+          {
+            "group": "Utilities",
+            "pages": [
+              "api/use-reduced-motion",
+              "api/use-time",
+              "api/use-will-change",
+              "api/transform",
+              "api/interpolate"
+            ]
+          },
+          {
+            "group": "Types",
+            "pages": [
+              "api/types/motion-props",
+              "api/types/animation-options",
+              "api/types/transition",
+              "api/types/variants"
             ]
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
-  },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
-    }
-  },
-  "contextual": {
-    "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
-  },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
+    ]
   }
 }

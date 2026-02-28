@@ -1,0 +1,189 @@
+---
+title: Animation Basics
+description: Learn the fundamentals of animation in Motion, including declarative animations, transitions, and keyframes
+---
+
+Motion provides a powerful, intuitive API for creating animations. Whether you're animating React components or plain DOM elements, Motion offers multiple ways to bring your UI to life.
+
+## Declarative Animations
+
+The simplest way to animate in Motion is using the `animate` prop on motion components. Just declare your target values and Motion handles the rest.
+
+```jsx
+import { motion } from "framer-motion"
+
+export function App() {
+  const [isActive, setIsActive] = useState(false)
+
+  return (
+    <motion.div
+      animate={{ x: isActive ? 100 : 0 }}
+      transition={{ duration: 1 }}
+      style={{ width: 100, height: 100, background: "white" }}
+    />
+  )
+}
+```
+
+When the `animate` prop changes, Motion automatically animates to the new values. No need to manually manage animation state or timing.
+
+## Transitions
+
+The `transition` prop controls how animations behave. Motion supports several animation types:
+
+### Tween (Duration-based)
+
+The default animation type uses duration and easing:
+
+```jsx
+<motion.div
+  animate={{ x: 100 }}
+  transition={{ 
+    duration: 0.5,
+    ease: "easeInOut" 
+  }}
+/>
+```
+
+### Spring (Physics-based)
+
+Spring animations feel more natural and responsive:
+
+```jsx
+<motion.div
+  animate={{ x: 100 }}
+  transition={{
+    type: "spring",
+    stiffness: 300,
+    damping: 28,
+    restDelta: 0.00001
+  }}
+/>
+```
+
+Spring animations automatically adjust their duration based on velocity and distance, creating more realistic motion.
+
+## Keyframes
+
+Animate through multiple values by passing an array:
+
+```jsx
+import { motion, useCycle } from "framer-motion"
+
+function App() {
+  const [animate, cycle] = useCycle("a", "b")
+  
+  return (
+    <motion.div
+      animate={animate}
+      variants={{
+        a: { x: [0, 200] },
+        b: { x: [0, 200] }
+      }}
+      onClick={() => cycle()}
+      transition={{
+        duration: 2,
+        easings: ["circOut", "circOut", "circOut"],
+        times: [0, 0.1, 0.9, 1]
+      }}
+      style={{
+        width: 100,
+        height: 100,
+        background: "white",
+        borderRadius: 20
+      }}
+    />
+  )
+}
+```
+
+The `times` array defines when each keyframe should be reached (0-1), while `easings` controls the easing between each keyframe.
+
+## Initial State
+
+Set the starting state of an animation with the `initial` prop:
+
+```jsx
+<motion.div
+  initial={{ opacity: 0, y: -50 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.5 }}
+>
+  Fade in from above
+</motion.div>
+```
+
+## Animatable Properties
+
+Motion can animate:
+
+- **Transform properties**: `x`, `y`, `z`, `scale`, `rotate`, `skew`
+- **CSS properties**: `opacity`, `backgroundColor`, `color`, `width`, `height`
+- **SVG attributes**: `pathLength`, `pathOffset`, `strokeWidth`
+- **CSS variables**: `--custom-property`
+- **Complex values**: `boxShadow`, `filter`, `borderRadius`
+
+```jsx
+<motion.div
+  animate={{
+    scale: 1.2,
+    rotate: 45,
+    backgroundColor: "#ff0000",
+    boxShadow: "0px 10px 30px rgba(0,0,0,0.3)"
+  }}
+/>
+```
+
+## Exit Animations
+
+When combined with `AnimatePresence`, components can animate out before being removed:
+
+```jsx
+import { motion, AnimatePresence } from "framer-motion"
+
+function App() {
+  const [isVisible, setIsVisible] = useState(true)
+
+  return (
+    <AnimatePresence>
+      {isVisible && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        />
+      )}
+    </AnimatePresence>
+  )
+}
+```
+
+## Performance
+
+Motion automatically optimizes animations for performance:
+
+- Transform properties (`x`, `y`, `scale`, `rotate`) use the GPU
+- The Web Animations API is used when available
+- Only changed properties are animated
+- Layout calculations are batched to prevent thrashing
+
+<Tip>
+For best performance, prefer animating transform and opacity properties over properties that trigger layout recalculation like `width` or `height`.
+</Tip>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Motion Values" href="/concepts/motion-values" icon="waveform">
+    Learn about reactive animation with MotionValues
+  </Card>
+  <Card title="Animation Controls" href="/concepts/animation-controls" icon="sliders">
+    Control animations imperatively with hooks
+  </Card>
+  <Card title="Variants" href="/concepts/variants" icon="layer-group">
+    Orchestrate complex animations across components
+  </Card>
+  <Card title="Gestures" href="/concepts/gestures" icon="hand-pointer">
+    Add interactive gesture animations
+  </Card>
+</CardGroup>

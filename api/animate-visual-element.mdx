@@ -1,0 +1,306 @@
+---
+title: animateVisualElement()
+description: Internal low-level API for animating visual elements (advanced)
+---
+
+<Warning>
+  This is an internal low-level API. Most users should use [animate()](/api/animate) or [useAnimate()](/api/use-animate) instead.
+</Warning>
+
+`animateVisualElement()` is a low-level function that animates a Motion visual element directly. It's used internally by Motion's component system and the higher-level animation APIs.
+
+## Signature
+
+```typescript
+function animateVisualElement(
+  visualElement: VisualElement,
+  definition: AnimationDefinition,
+  options?: VisualElementAnimationOptions
+): Promise<any>
+```
+
+## Parameters
+
+<ParamField path="visualElement" type="VisualElement" required>
+  The visual element to animate. This is Motion's internal representation of a DOM element or component.
+</ParamField>
+
+<ParamField path="definition" type="AnimationDefinition" required>
+  What to animate to. Can be:
+  
+  - **Target object**: `{ x: 100, opacity: 0 }`
+  - **Variant name**: `"visible"` (string)
+  - **Variant array**: `["visible", "active"]`
+  - **Variant function**: `(custom) => ({ x: 100 })`
+</ParamField>
+
+<ParamField path="options" type="VisualElementAnimationOptions">
+  Animation configuration options
+  
+  <Expandable title="properties">
+    <ResponseField name="delay" type="number">
+      Delay before animation starts, in seconds
+    </ResponseField>
+    
+    <ResponseField name="transitionOverride" type="Transition">
+      Override the default transition for this animation
+    </ResponseField>
+    
+    <ResponseField name="custom" type="any">
+      Custom data passed to variant functions
+    </ResponseField>
+    
+    <ResponseField name="type" type="AnimationType">
+      The type of animation (for internal use)
+    </ResponseField>
+  </Expandable>
+</ParamField>
+
+## Return Value
+
+Returns a `Promise` that resolves when the animation completes.
+
+## Type Definitions
+
+```typescript
+interface VisualElementAnimationOptions {
+  delay?: number
+  transitionOverride?: Transition
+  custom?: any
+  type?: AnimationType
+}
+
+type AnimationDefinition =
+  | VariantLabels
+  | TargetAndTransition
+  | TargetResolver
+
+type VariantLabels = string | string[]
+
+type TargetAndTransition = Target & {
+  transition?: Transition
+  transitionEnd?: ResolvedValues
+}
+
+type TargetResolver = (
+  custom: any,
+  current: ResolvedValues,
+  velocity: ResolvedValues
+) => TargetAndTransition | string
+
+interface VisualElement {
+  values: Map<string, MotionValue>
+  notify(eventName: string, data: any): void
+  getVariant(name: string): Variant | undefined
+  variantChildren?: Set<VisualElement>
+  // ... other internal properties
+}
+```
+
+## How It Works
+
+When called, `animateVisualElement()`:
+
+1. **Notifies start**: Fires `"AnimationStart"` event
+2. **Resolves definition**:
+   - If array of variants: animates each variant in sequence
+   - If string variant: looks up and animates that variant
+   - If object/function: resolves and animates target values
+3. **Animates values**: Uses `animateTarget()` or `animateVariant()` internally
+4. **Notifies complete**: Fires `"AnimationComplete"` event
+
+## Usage Example
+
+<Warning>
+  You typically won't use this directly. This example is for understanding Motion's internals.
+</Warning>
+
+```javascript
+import { animateVisualElement } from "motion-dom"
+
+// Get or create a visual element (internal API)
+const visualElement = getVisualElement(element)
+
+// Animate to target values
+await animateVisualElement(
+  visualElement,
+  { x: 100, opacity: 0 },
+  { 
+    transitionOverride: {
+      duration: 1,
+      ease: "easeOut"
+    }
+  }
+)
+
+console.log("Animation complete")
+```
+
+## Animating Variants
+
+```javascript
+// Animate to a variant
+await animateVisualElement(
+  visualElement,
+  "visible",
+  { delay: 0.5 }
+)
+
+// Animate multiple variants in sequence
+await animateVisualElement(
+  visualElement,
+  ["visible", "active"]
+)
+```
+
+## With Custom Data
+
+```javascript
+// Variant function receives custom data
+const variants = {
+  visible: (custom) => ({
+    opacity: 1,
+    transition: { delay: custom.index * 0.1 }
+  })
+}
+
+visualElement.variants = variants
+
+await animateVisualElement(
+  visualElement,
+  "visible",
+  { custom: { index: 5 } }
+)
+```
+
+## Events
+
+The visual element fires events during animation:
+
+```javascript
+visualElement.notify = (eventName, data) => {
+  if (eventName === "AnimationStart") {
+    console.log("Animation started:", data)
+  } else if (eventName === "AnimationComplete") {
+    console.log("Animation completed:", data)
+  }
+}
+
+await animateVisualElement(visualElement, { x: 100 })
+```
+
+## Internal Architecture
+
+This function is part of Motion's animation pipeline:
+
+```
+React Component
+      ↓
+motion.div (with animate prop)
+      ↓
+VisualElement created
+      ↓
+animateVisualElement() ←── You are here
+      ↓
+animateTarget() / animateVariant()
+      ↓
+animateMotionValue()
+      ↓
+NativeAnimation / JSAnimation
+      ↓
+WAAAPI / JavaScript animation
+```
+
+## Related Internal Functions
+
+### animateTarget()
+
+Animates a visual element to target values:
+
+```typescript
+function animateTarget(
+  visualElement: VisualElement,
+  definition: TargetAndTransition,
+  options: VisualElementAnimationOptions
+): AnimationPlaybackControls[]
+```
+
+### animateVariant()
+
+Animates a visual element to a variant:
+
+```typescript
+function animateVariant(
+  visualElement: VisualElement,
+  variantLabel: string,
+  options: VisualElementAnimationOptions
+): Promise<any>
+```
+
+### setTarget()
+
+Instantly sets values without animating:
+
+```typescript
+function setTarget(
+  visualElement: VisualElement,
+  definition: TargetAndTransition
+): void
+```
+
+## When to Use This
+
+You might need this if you're:
+
+1. **Building a custom animation library** on top of Motion
+2. **Creating custom Motion components** with specialized behavior
+3. **Integrating deeply** with Motion's internal systems
+4. **Contributing to Motion** itself
+
+For normal use cases, prefer:
+- [animate()](/api/animate) - For imperative animations
+- [useAnimate()](/api/use-animate) - For React animations
+- [motion components](/api/motion) - For declarative animations
+
+## Source Code
+
+Location: `packages/motion-dom/src/animation/interfaces/visual-element.ts`
+
+```typescript
+export function animateVisualElement(
+    visualElement: VisualElement,
+    definition: AnimationDefinition,
+    options: VisualElementAnimationOptions = {}
+) {
+    visualElement.notify("AnimationStart", definition)
+    let animation: Promise<any>
+
+    if (Array.isArray(definition)) {
+        const animations = definition.map((variant) =>
+            animateVariant(visualElement, variant, options)
+        )
+        animation = Promise.all(animations)
+    } else if (typeof definition === "string") {
+        animation = animateVariant(visualElement, definition, options)
+    } else {
+        const resolvedDefinition =
+            typeof definition === "function"
+                ? resolveVariant(visualElement, definition, options.custom)
+                : definition
+
+        animation = Promise.all(
+            animateTarget(visualElement, resolvedDefinition, options)
+        )
+    }
+
+    return animation.then(() => {
+        visualElement.notify("AnimationComplete", definition)
+    })
+}
+```
+
+## See Also
+
+- [VisualElement](/api/visual-element) - Visual element API reference
+- [animate()](/api/animate) - High-level animation API
+- [AnimationControls](/api/animation-controls) - Legacy imperative controls

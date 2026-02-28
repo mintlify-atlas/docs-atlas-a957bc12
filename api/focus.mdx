@@ -1,0 +1,180 @@
+---
+title: 'Focus'
+description: 'Focus gesture props and event handlers'
+icon: 'circle-dot'
+---
+
+## Overview
+
+The focus gesture detects when an element receives focus. It respects the `:focus-visible` pseudo-class to only animate when keyboard focus is detected, not when clicking with a mouse.
+
+## Props
+
+### whileFocus
+
+Properties or variant label to animate to while the focus gesture is recognized.
+
+```tsx
+type whileFocus = VariantLabels | TargetAndTransition
+
+type VariantLabels = string | string[]
+
+type TargetAndTransition = {
+  [key: string]: any
+  transition?: Transition
+  transitionEnd?: ResolvedValues
+}
+```
+
+```jsx
+<motion.input whileFocus={{ scale: 1.05 }} />
+```
+
+```jsx
+// With variants
+const variants = {
+  focused: {
+    scale: 1.05,
+    borderColor: "#007bff",
+    transition: { duration: 0.2 }
+  }
+}
+
+<motion.input
+  variants={variants}
+  whileFocus="focused"
+/>
+```
+
+## Behavior
+
+### Focus Visible Detection
+
+The focus gesture uses the `:focus-visible` CSS pseudo-class to determine when to apply animations:
+
+- Animations trigger when the element receives **keyboard focus**
+- Animations do NOT trigger when the element is clicked with a **mouse** or **touch**
+- If the browser doesn't support `:focus-visible`, it falls back to standard `:focus` behavior
+
+```jsx
+// This will only animate when tabbing to the input,
+// not when clicking it with a mouse
+<motion.input
+  type="text"
+  whileFocus={{ scale: 1.05, borderColor: "#007bff" }}
+/>
+```
+
+## Examples
+
+### Accessible form input
+
+```jsx
+<motion.input
+  type="email"
+  placeholder="Enter your email"
+  whileFocus={{
+    scale: 1.02,
+    borderColor: "#007bff",
+    boxShadow: "0 0 0 3px rgba(0, 123, 255, 0.1)"
+  }}
+  style={{
+    padding: '12px',
+    borderRadius: '8px',
+    border: '2px solid #e0e0e0',
+    fontSize: '16px',
+    transition: 'border-color 0.2s'
+  }}
+/>
+```
+
+### Focus ring animation
+
+```jsx
+<motion.button
+  whileFocus={{
+    scale: 1.05,
+    outline: '2px solid #007bff',
+    outlineOffset: '2px'
+  }}
+  style={{
+    padding: '12px 24px',
+    borderRadius: '8px',
+    backgroundColor: '#007bff',
+    color: 'white',
+    border: 'none',
+    cursor: 'pointer'
+  }}
+>
+  Focusable Button
+</motion.button>
+```
+
+### Combined with other gestures
+
+```jsx
+<motion.textarea
+  whileFocus={{
+    scale: 1.02,
+    borderColor: "#007bff"
+  }}
+  whileHover={{
+    borderColor: "#0056b3"
+  }}
+  style={{
+    padding: '12px',
+    borderRadius: '8px',
+    border: '2px solid #e0e0e0',
+    fontSize: '14px',
+    minHeight: '100px',
+    resize: 'vertical'
+  }}
+/>
+```
+
+### Select dropdown with focus state
+
+```jsx
+const variants = {
+  unfocused: {
+    scale: 1,
+    borderColor: "#e0e0e0"
+  },
+  focused: {
+    scale: 1.02,
+    borderColor: "#007bff",
+    boxShadow: "0 0 0 3px rgba(0, 123, 255, 0.1)",
+    transition: {
+      duration: 0.2
+    }
+  }
+}
+
+<motion.select
+  variants={variants}
+  initial="unfocused"
+  whileFocus="focused"
+  style={{
+    padding: '12px',
+    borderRadius: '8px',
+    border: '2px solid #e0e0e0',
+    fontSize: '16px',
+    cursor: 'pointer'
+  }}
+>
+  <option>Option 1</option>
+  <option>Option 2</option>
+  <option>Option 3</option>
+</motion.select>
+```
+
+## Accessibility Notes
+
+- Always ensure focus states are visible for keyboard users
+- The `whileFocus` animation respects `:focus-visible`, making it accessible by default
+- Combine with proper ARIA labels and semantic HTML for the best user experience
+- Test keyboard navigation to ensure focus animations enhance rather than hinder usability
+
+## Browser Support
+
+The `:focus-visible` detection works in all modern browsers. In browsers that don't support `:focus-visible`, the feature gracefully falls back to standard focus behavior.

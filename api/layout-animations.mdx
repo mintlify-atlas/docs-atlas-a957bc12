@@ -1,0 +1,327 @@
+---
+title: 'Layout Animations'
+description: 'Automatically animate layout changes'
+icon: 'grid'
+---
+
+## Overview
+
+Layout animations allow elements to automatically animate to their new position when their layout changes. Motion uses performant transforms to achieve this effect.
+
+## Props
+
+### layout
+
+If `true`, the component will automatically animate to its new position when its layout changes.
+
+```tsx
+type layout = boolean | "position" | "size" | "preserve-aspect"
+```
+
+- `true`: Animate both position and size
+- `"position"`: Only animate position (size changes instantly)
+- `"size"`: Only animate size (position changes instantly)
+- `"preserve-aspect"`: Animate size and position only if aspect ratio remains the same
+
+```jsx
+<motion.div layout />
+```
+
+```jsx
+// Only animate position changes
+<motion.div layout="position" />
+```
+
+## How It Works
+
+Layout animations use performant transforms to animate elements. This technique involves animating an element's scale, which can introduce visual distortions on:
+
+- Children elements
+- `boxShadow`
+- `borderRadius`
+
+### Correcting Distortions
+
+**Children:** Add `layout` to immediate children
+
+```jsx
+<motion.div layout>
+  <motion.div layout>
+    Child is corrected
+  </motion.div>
+</motion.div>
+```
+
+**boxShadow and borderRadius:** Animate them or set via `initial`
+
+```jsx
+<motion.div
+  layout
+  initial={{ borderRadius: 8 }}
+  style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
+/>
+```
+
+## Layout Transition
+
+Customize the layout animation with the `transition` prop.
+
+```jsx
+<motion.div
+  layout
+  transition={{
+    layout: { duration: 0.3, ease: "easeInOut" }
+  }}
+/>
+```
+
+## Event Handlers
+
+### onLayoutAnimationStart
+
+Callback when a layout animation starts.
+
+```tsx
+type onLayoutAnimationStart = () => void
+```
+
+```jsx
+<motion.div
+  layout
+  onLayoutAnimationStart={() => console.log('Layout animation started')}
+/>
+```
+
+### onLayoutAnimationComplete
+
+Callback when a layout animation completes.
+
+```tsx
+type onLayoutAnimationComplete = () => void
+```
+
+```jsx
+<motion.div
+  layout
+  onLayoutAnimationComplete={() => console.log('Layout animation complete')}
+/>
+```
+
+## Advanced Props
+
+### layoutDependency
+
+Force a layout animation when this value changes.
+
+```tsx
+layoutDependency?: any
+```
+
+```jsx
+const [count, setCount] = useState(0)
+
+<motion.div layout layoutDependency={count">
+  {count}
+</motion.div>
+```
+
+### layoutScroll
+
+Measure scroll when layout updates.
+
+```tsx
+layoutScroll?: boolean
+```
+
+```jsx
+<motion.div layout layoutScroll />
+```
+
+### layoutRoot
+
+Mark as a layout root where all children resolve relatively to it.
+
+```tsx
+layoutRoot?: boolean
+```
+
+```jsx
+<motion.div layout layoutRoot>
+  {/* All children animate relative to this */}
+</motion.div>
+```
+
+## Examples
+
+### Expanding card
+
+```jsx
+function ExpandingCard() {
+  const [isExpanded, setIsExpanded] = useState(false)
+
+  return (
+    <motion.div
+      layout
+      onClick={() => setIsExpanded(!isExpanded)}
+      style={{
+        width: isExpanded ? 400 : 200,
+        height: isExpanded ? 300 : 100,
+        borderRadius: 12,
+        backgroundColor: '#f0f0f0'
+      }}
+    >
+      <motion.p layout>
+        Click to expand
+      </motion.p>
+    </motion.div>
+  )
+}
+```
+
+### List reordering
+
+```jsx
+function ReorderList() {
+  const [items, setItems] = useState([1, 2, 3, 4, 5])
+
+  const shuffle = () => {
+    setItems([...items].sort(() => Math.random() - 0.5))
+  }
+
+  return (
+    <div>
+      <button onClick={shuffle}>Shuffle</button>
+      {items.map(item => (
+        <motion.div
+          key={item}
+          layout
+          transition={{ duration: 0.3 }}
+          style={{
+            padding: 20,
+            margin: 10,
+            backgroundColor: '#007bff',
+            borderRadius: 8
+          }}
+        >
+          {item}
+        </motion.div>
+      ))}
+    </div>
+  )
+}
+```
+
+### Grid layout change
+
+```jsx
+function GridLayout() {
+  const [columns, setColumns] = useState(3)
+
+  return (
+    <>
+      <button onClick={() => setColumns(columns === 3 ? 1 : 3)">
+        Toggle Grid
+      </button>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: `repeat(${columns}, 1fr)`,
+          gap: 16
+        }}
+      >
+        {[...Array(6)].map((_, i) => (
+          <motion.div
+            key={i}
+            layout
+            style={{
+              height: 100,
+              backgroundColor: '#007bff',
+              borderRadius: 8
+            }}
+          />
+        ))}
+      </div>
+    </>
+  )
+}
+```
+
+### Accordion
+
+```jsx
+function Accordion({ items }) {
+  const [expanded, setExpanded] = useState(null)
+
+  return (
+    <div>
+      {items.map((item, i) => (
+        <motion.div
+          key={i}
+          layout
+          onClick={() => setExpanded(expanded === i ? null : i)}
+          style={{
+            borderRadius: 8,
+            backgroundColor: '#f0f0f0',
+            marginBottom: 8,
+            overflow: 'hidden'
+          }}
+        >
+          <motion.h3 layout style={{ padding: 16 }">
+            {item.title}
+          </motion.h3>
+          {expanded === i && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              style={{ padding: 16, paddingTop: 0 }}
+            >
+              {item.content}
+            </motion.div>
+          )}
+        </motion.div>
+      ))}
+    </div>
+  )
+}
+```
+
+### Position-only animation
+
+```jsx
+function PositionAnimation() {
+  const [position, setPosition] = useState('flex-start')
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: position,
+        height: 200,
+        backgroundColor: '#f8f8f8'
+      }}
+    >
+      <motion.div
+        layout="position"
+        onClick={() => 
+          setPosition(position === 'flex-start' ? 'flex-end' : 'flex-start')
+        }
+        style={{
+          width: 100,
+          height: 100,
+          backgroundColor: '#007bff',
+          borderRadius: 8
+        }}
+      />
+    </div>
+  )
+}
+```
+
+## Notes
+
+- Layout animations use transforms for performance
+- Add `layout` to children to prevent scale distortion
+- Animate or initialize `borderRadius` and `boxShadow` for proper corrections
+- Works with Flexbox, Grid, and absolute positioning
+- Combine with AnimatePresence for entering/exiting elements

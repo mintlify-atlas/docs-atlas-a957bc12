@@ -1,0 +1,401 @@
+---
+title: Keyframe Animations
+description: Create complex multi-step animations with keyframes
+---
+
+Keyframe animations let you define multiple values for a property, creating complex animation sequences that move through each value in order.
+
+## Basic Keyframes
+
+Pass an array of values to animate through:
+
+```jsx
+<motion.div
+  animate={{ 
+    x: [0, 100, 0],        // Move right, then back
+    rotate: [0, 180, 360]   // Full rotation
+  }}
+  transition={{ duration: 2 }}
+/>
+```
+
+The element will animate through each value sequentially over the duration.
+
+## Timing Control
+
+Control when each keyframe is reached using the `times` array:
+
+```jsx
+<motion.div
+  animate={{ 
+    x: [0, 100, 100, 0],
+    opacity: [0, 1, 1, 0]
+  }}
+  transition={{ 
+    duration: 2,
+    times: [0, 0.2, 0.8, 1]  // Reach values at these progress points
+  }}
+/>
+```
+
+- `times` values must be between 0 and 1
+- First value must be 0, last must be 1
+- Array length must match keyframe array length
+
+<Note>
+  If you don't specify `times`, keyframes are evenly distributed across the duration.
+</Note>
+
+## Per-Keyframe Easing
+
+Apply different easing functions between each keyframe:
+
+```jsx
+<motion.div
+  animate={{ 
+    x: [0, 100, 0]
+  }}
+  transition={{ 
+    duration: 2,
+    ease: ["easeOut", "easeIn"]  // One less than keyframe count
+  }}
+/>
+```
+
+From `keyframes.ts:34-36`, easing functions are converted and applied:
+
+```typescript
+const easingFunctions = isEasingArray(ease)
+  ? ease.map(easingDefinitionToFunction)
+  : easingDefinitionToFunction(ease)
+```
+
+## Real-World Examples
+
+### Loading Pulse
+
+Create a subtle pulsing animation:
+
+```jsx
+<motion.div
+  animate={{
+    scale: [1, 1.05, 1],
+    opacity: [0.7, 1, 0.7]
+  }}
+  transition={{
+    duration: 2,
+    repeat: Infinity,
+    ease: "easeInOut"
+  }}
+>
+  Loading...
+</motion.div>
+```
+
+### Attention Seeker
+
+Shake animation to draw attention:
+
+```jsx
+<motion.div
+  animate={{
+    x: [0, -10, 10, -10, 10, 0],
+    rotate: [0, -5, 5, -5, 5, 0]
+  }}
+  transition={{
+    duration: 0.5,
+    times: [0, 0.2, 0.4, 0.6, 0.8, 1]
+  }}
+>
+  New notification!
+</motion.div>
+```
+
+### Color Cycle
+
+Cycle through multiple colors:
+
+```jsx
+<motion.div
+  animate={{
+    backgroundColor: [
+      "#ff0080",
+      "#7928ca",
+      "#0070f3",
+      "#00ff00",
+      "#ff0080"
+    ]
+  }}
+  transition={{
+    duration: 5,
+    repeat: Infinity,
+    ease: "linear"
+  }}
+/>
+```
+
+### Bouncing Ball
+
+Realistic bounce with varying timing:
+
+```jsx
+<motion.div
+  animate={{
+    y: [0, -150, 0, -100, 0, -50, 0],
+    scaleY: [1, 1.1, 0.9, 1.05, 0.95, 1.02, 1]
+  }}
+  transition={{
+    duration: 2,
+    times: [0, 0.2, 0.4, 0.55, 0.7, 0.85, 1],
+    ease: [
+      [0.42, 0, 1, 1],    // easeIn for up
+      [0, 0, 0.58, 1],    // easeOut for down
+      [0.42, 0, 1, 1],
+      [0, 0, 0.58, 1],
+      [0.42, 0, 1, 1],
+      [0, 0, 0.58, 1]
+    ]
+  }}
+  style={{
+    width: 50,
+    height: 50,
+    borderRadius: '50%',
+    background: '#ff0080'
+  }}
+/>
+```
+
+### Path Animation
+
+Animate along a custom path:
+
+```jsx
+<motion.div
+  animate={{
+    x: [0, 100, 200, 200, 100, 0],
+    y: [0, -50, 0, 100, 150, 100]
+  }}
+  transition={{
+    duration: 3,
+    times: [0, 0.2, 0.4, 0.6, 0.8, 1],
+    ease: "easeInOut",
+    repeat: Infinity
+  }}
+/>
+```
+
+## Combining with Variants
+
+Keyframes work seamlessly with variants:
+
+```jsx
+const variants = {
+  wiggle: {
+    rotate: [0, 5, -5, 5, -5, 0],
+    transition: {
+      duration: 0.5,
+      times: [0, 0.2, 0.4, 0.6, 0.8, 1]
+    }
+  },
+  pulse: {
+    scale: [1, 1.1, 1, 1.1, 1],
+    transition: {
+      duration: 0.6,
+      ease: "easeInOut"
+    }
+  }
+}
+
+<motion.div
+  variants={variants}
+  animate="wiggle"
+  whileHover="pulse"
+/>
+```
+
+## SVG Path Keyframes
+
+Animate SVG paths through different shapes:
+
+```jsx
+<motion.svg width="100" height="100">
+  <motion.path
+    animate={{
+      d: [
+        "M 50 50 L 100 50 L 100 100 Z",  // Triangle
+        "M 50 25 L 75 50 L 50 75 L 25 50 Z",  // Diamond
+        "M 50 50 m -25 0 a 25 25 0 1 0 50 0 a 25 25 0 1 0 -50 0"  // Circle
+      ]
+    }}
+    transition={{ duration: 3, repeat: Infinity }}
+    fill="#0070f3"
+  />
+</motion.svg>
+```
+
+## Complex Sequences
+
+Orchestrate multiple properties with precise timing:
+
+```jsx
+<motion.div
+  animate={{
+    x: [0, 100, 100, 0, 0],
+    y: [0, 0, 100, 100, 0],
+    rotate: [0, 0, 90, 180, 360],
+    borderRadius: ["20%", "20%", "50%", "20%", "20%"],
+    backgroundColor: [
+      "#ff0080",
+      "#7928ca",
+      "#0070f3",
+      "#00ff00",
+      "#ff0080"
+    ]
+  }}
+  transition={{
+    duration: 4,
+    times: [0, 0.25, 0.5, 0.75, 1],
+    ease: "easeInOut"
+  }}
+/>
+```
+
+## Keyframe Implementation
+
+Motion's keyframe engine uses interpolation. From `keyframes.ts:59-63`:
+
+```typescript
+const mapTimeToKeyframe = interpolate<T>(absoluteTimes, keyframeValues, {
+  ease: Array.isArray(easingFunctions)
+    ? easingFunctions
+    : defaultEasing(keyframeValues, easingFunctions),
+})
+```
+
+The animation state is updated each frame:
+
+```typescript
+next: (t: number) => {
+  state.value = mapTimeToKeyframe(t)
+  state.done = t >= duration
+  return state
+}
+```
+
+## Repeating Animations
+
+Create infinite loops or limited repeats:
+
+```jsx
+// Infinite loop
+<motion.div
+  animate={{ rotate: [0, 360] }}
+  transition={{ 
+    duration: 2,
+    repeat: Infinity,
+    ease: "linear"
+  }}
+/>
+
+// Repeat 3 times
+<motion.div
+  animate={{ x: [0, 100, 0] }}
+  transition={{ 
+    duration: 1,
+    repeat: 3,
+    repeatType: "loop"  // "loop", "reverse", or "mirror"
+  }}
+/>
+
+// Yoyo effect (reverse on each repeat)
+<motion.div
+  animate={{ scale: [1, 1.5] }}
+  transition={{ 
+    duration: 1,
+    repeat: Infinity,
+    repeatType: "reverse"
+  }}
+/>
+```
+
+## Easing Options
+
+Available easing functions:
+
+- `"linear"` - Constant speed
+- `"easeIn"` - Slow start
+- `"easeOut"` - Slow end
+- `"easeInOut"` - Slow start and end
+- `"circIn"`, `"circOut"`, `"circInOut"` - Circular easing
+- `"backIn"`, `"backOut"`, `"backInOut"` - Overshooting curves
+- `[0.42, 0, 0.58, 1]` - Custom cubic bezier
+
+## Performance Tips
+
+<Tip>
+  **Limit keyframe count** - More keyframes = more calculations. Use 3-5 keyframes for most animations.
+</Tip>
+
+<Tip>
+  **Animate GPU-accelerated properties** - Prefer `x`, `y`, `scale`, `rotate`, `opacity` over `top`, `left`, `width`, `height`.
+</Tip>
+
+<Tip>
+  **Use `linear` easing for continuous loops** - Prevents micro-pauses at loop points.
+</Tip>
+
+## Common Patterns
+
+### Typewriter Effect
+
+```jsx
+const text = "Hello, World!"
+
+<motion.div
+  initial={{ width: 0 }}
+  animate={{ width: "100%" }}
+  transition={{
+    duration: 2,
+    ease: "steps(" + text.length + ")"
+  }}
+  style={{ overflow: "hidden", whiteSpace: "nowrap" }}
+>
+  {text}
+</motion.div>
+```
+
+### Gradient Shift
+
+```jsx
+<motion.div
+  animate={{
+    backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"]
+  }}
+  transition={{
+    duration: 3,
+    repeat: Infinity,
+    ease: "linear"
+  }}
+  style={{
+    background: "linear-gradient(90deg, #ff0080, #7928ca, #0070f3)",
+    backgroundSize: "200% 200%"
+  }}
+/>
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Spring Animations" icon="wave-pulse" href="/guides/spring-animations">
+    Physics-based motion
+  </Card>
+  <Card title="Scroll Animations" icon="arrows-up-down" href="/guides/scroll-animations">
+    Link keyframes to scroll
+  </Card>
+  <Card title="Layout Transitions" icon="arrows-maximize" href="/guides/layout-transitions">
+    Animate layout changes
+  </Card>
+  <Card title="Performance" icon="gauge-high" href="/guides/performance">
+    Optimize complex animations
+  </Card>
+</CardGroup>

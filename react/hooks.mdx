@@ -1,0 +1,614 @@
+---
+title: React Hooks
+description: Hooks for advanced animation control and motion values
+---
+
+Motion provides a comprehensive set of React hooks for advanced animation control, motion values, and responsive animations.
+
+## Animation Control
+
+### useAnimate
+
+Create imperative animations with a scoped selector:
+
+```jsx
+import { useAnimate } from "motion"
+import { useEffect } from "react"
+
+function Component() {
+  const [scope, animate] = useAnimate()
+
+  useEffect(() => {
+    animate(
+      "div",
+      { opacity: 1, x: 100 },
+      { duration: 1 }
+    )
+  }, [])
+
+  return (
+    <div ref={scope">
+      <div style={{ opacity: 0 }}>Animate me</div>
+    </div>
+  )
+}
+```
+
+**Animating multiple elements:**
+
+```jsx
+function Sequence() {
+  const [scope, animate] = useAnimate()
+
+  const handleClick = async () => {
+    await animate(".box", { scale: 1.2 })
+    await animate(".box", { rotate: 180 })
+    await animate(".box", { scale: 1 })
+  }
+
+  return (
+    <div ref={scope">
+      <button onClick={handleClick}>Animate</button>
+      <div className="box">Box 1</div>
+      <div className="box">Box 2</div>
+      <div className="box">Box 3</div>
+    </div>
+  )
+}
+```
+
+### useAnimationControls
+
+Create animation controls to manually trigger animations:
+
+```jsx
+import { motion, useAnimationControls } from "motion"
+
+function Component() {
+  const controls = useAnimationControls()
+
+  return (
+    <>
+      <button
+        onClick={() => {
+          controls.start({
+            x: 100,
+            transition: { duration: 0.5 }
+          })
+        }}
+      >
+        Animate
+      </button>
+      <motion.div animate={controls} />
+    </>
+  )
+}
+```
+
+**Controlling multiple components:**
+
+```jsx
+function MultiControl() {
+  const controls = useAnimationControls()
+
+  return (
+    <>
+      <button onClick={() => controls.start({ scale: 1.2 })">
+        Scale Up
+      </button>
+      <motion.div animate={controls}>Box 1</motion.div>
+      <motion.div animate={controls}>Box 2</motion.div>
+      <motion.div animate={controls}>Box 3</motion.div>
+    </>
+  )
+}
+```
+
+Alias: `useAnimation` (deprecated but still available)
+
+## Motion Values
+
+### useMotionValue
+
+Create a motion value that can be used in animations without triggering re-renders:
+
+```jsx
+import { motion, useMotionValue } from "motion"
+
+function Component() {
+  const x = useMotionValue(0)
+
+  return (
+    <motion.div
+      drag="x"
+      style={{ x }}
+      onDrag={() => console.log(x.get())}
+    />
+  )
+}
+```
+
+**Benefits:**
+- No re-renders when value changes
+- Subscribable
+- Can be passed to multiple components
+
+```jsx
+const x = useMotionValue(0)
+
+// Get current value
+const current = x.get()
+
+// Set value
+x.set(100)
+
+// Subscribe to changes
+x.on("change", (latest) => console.log(latest))
+```
+
+### useTransform
+
+Transform one motion value into another:
+
+```jsx
+import { motion, useMotionValue, useTransform } from "motion"
+
+function Component() {
+  const x = useMotionValue(0)
+  const opacity = useTransform(x, [-200, 0, 200], [0, 1, 0])
+
+  return (
+    <motion.div
+      drag="x"
+      style={{ x, opacity }}
+    />
+  )
+}
+```
+
+**Transform with function:**
+
+```jsx
+const x = useMotionValue(10)
+const doubleX = useTransform(x, (value) => value * 2)
+```
+
+**Multiple inputs:**
+
+```jsx
+const x = useMotionValue(0)
+const y = useMotionValue(0)
+const combined = useTransform(
+  [x, y],
+  ([latestX, latestY]) => latestX * latestY
+)
+```
+
+**Transform to multiple outputs:**
+
+```jsx
+const x = useMotionValue(0)
+const { opacity, scale } = useTransform(
+  x,
+  [0, 100],
+  {
+    opacity: [0, 1],
+    scale: [0.5, 1]
+  }
+)
+
+return <motion.div style={{ opacity, scale, x }} />
+```
+
+### useSpring
+
+Create a motion value that animates to its target with spring physics:
+
+```jsx
+import { motion, useMotionValue, useSpring } from "motion"
+
+function Component() {
+  const x = useMotionValue(0)
+  const springX = useSpring(x, { stiffness: 300, damping: 10 })
+
+  return <motion.div drag="x" style={{ x: springX }} />
+}
+```
+
+**Spring from value:**
+
+```jsx
+const x = useSpring(0, { stiffness: 100, damping: 20 })
+
+// Updates will spring to new value
+x.set(100)
+```
+
+### useScroll
+
+Track scroll position and progress:
+
+```jsx
+import { motion, useScroll } from "motion"
+
+function Component() {
+  const { scrollYProgress } = useScroll()
+
+  return (
+    <motion.div
+      style={{
+        scaleX: scrollYProgress,
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 10,
+        backgroundColor: "blue",
+        transformOrigin: "0%"
+      }}
+    />
+  )
+}
+```
+
+**Returns:**
+- `scrollX` / `scrollY` - Absolute scroll position in pixels
+- `scrollXProgress` / `scrollYProgress` - Scroll progress from 0 to 1
+
+**Scroll within container:**
+
+```jsx
+function ScrollContainer() {
+  const ref = useRef(null)
+  const { scrollYProgress } = useScroll({ container: ref })
+
+  return (
+    <div ref={ref} style={{ height: 300, overflow: "auto" }">
+      <motion.div style={{ scaleY: scrollYProgress }} />
+    </div>
+  )
+}
+```
+
+**Track element scroll:**
+
+```jsx
+function TrackElement() {
+  const targetRef = useRef(null)
+  const { scrollYProgress } = useScroll({
+    target: targetRef,
+    offset: ["start end", "end start"]
+  })
+
+  return (
+    <motion.div
+      ref={targetRef}
+      style={{ opacity: scrollYProgress }}
+    />
+  )
+}
+```
+
+### useMotionTemplate
+
+Combine motion values into a template string:
+
+```jsx
+import {
+  motion,
+  useMotionValue,
+  useMotionTemplate,
+  useSpring
+} from "motion"
+
+function Component() {
+  const shadowX = useSpring(0)
+  const shadowY = useMotionValue(0)
+  const shadow = useMotionTemplate`drop-shadow(${shadowX}px ${shadowY}px 20px rgba(0,0,0,0.3))`
+
+  return <motion.div style={{ filter: shadow }} />
+}
+```
+
+### useVelocity
+
+Track the velocity of a motion value:
+
+```jsx
+import { motion, useMotionValue, useVelocity } from "motion"
+
+function Component() {
+  const x = useMotionValue(0)
+  const xVelocity = useVelocity(x)
+
+  return (
+    <motion.div
+      drag="x"
+      style={{ x }}
+      onDrag={() => console.log(xVelocity.get())}
+    />
+  )
+}
+```
+
+## Viewport Detection
+
+### useInView
+
+Detect when an element enters the viewport:
+
+```jsx
+import { motion, useInView } from "motion"
+import { useRef } from "react"
+
+function Component() {
+  const ref = useRef(null)
+  const isInView = useInView(ref, { once: true })
+
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0 }}
+      animate={isInView ? { opacity: 1 } : { opacity: 0 }}
+    />
+  )
+}
+```
+
+**Options:**
+
+```tsx
+interface UseInViewOptions {
+  root?: RefObject<Element>  // Scroll container
+  margin?: string           // Like CSS margin (e.g., "0px 0px -200px 0px")
+  amount?: "some" | "all" | number  // How much should be visible
+  once?: boolean           // Only trigger once
+  initial?: boolean        // Initial in-view state
+}
+```
+
+**Examples:**
+
+```jsx
+// Trigger when 50% visible
+const isInView = useInView(ref, { amount: 0.5 })
+
+// Trigger when fully visible
+const isInView = useInView(ref, { amount: "all" })
+
+// Trigger with margin
+const isInView = useInView(ref, { margin: "0px 0px -100px 0px" })
+```
+
+## Presence
+
+### usePresence
+
+Check if component is present within AnimatePresence:
+
+```jsx
+import { usePresence } from "motion"
+import { useEffect } from "react"
+
+function Component() {
+  const [isPresent, safeToRemove] = usePresence()
+
+  useEffect(() => {
+    if (!isPresent) {
+      // Custom exit animation
+      const animation = setTimeout(safeToRemove, 1000)
+      return () => clearTimeout(animation)
+    }
+  }, [isPresent, safeToRemove])
+
+  return <div>Custom component</div>
+}
+```
+
+### useIsPresent
+
+Simpler version that only returns presence state:
+
+```jsx
+import { useIsPresent } from "motion"
+
+function Component() {
+  const isPresent = useIsPresent()
+
+  return <div>{isPresent ? "Here" : "Leaving"}</div>
+}
+```
+
+## Utility Hooks
+
+### useCycle
+
+Cycle through a series of values:
+
+```jsx
+import { motion, useCycle } from "motion"
+
+function Component() {
+  const [x, cycleX] = useCycle(0, 50, 100)
+
+  return (
+    <motion.div
+      animate={{ x }}
+      onTap={() => cycleX()}
+    />
+  )
+}
+```
+
+**Jump to specific index:**
+
+```jsx
+const [color, cycleColor] = useCycle("red", "green", "blue")
+
+// Cycle to next
+cycleColor()
+
+// Jump to index 2 (blue)
+cycleColor(2)
+```
+
+### useReducedMotion
+
+Respect user's reduced motion preference:
+
+```jsx
+import { motion, useReducedMotion } from "motion"
+
+function Component() {
+  const shouldReduceMotion = useReducedMotion()
+
+  return (
+    <motion.div
+      animate={{ x: 100 }}
+      transition={{
+        duration: shouldReduceMotion ? 0 : 1
+      }}
+    />
+  )
+}
+```
+
+### useAnimationFrame
+
+Run a callback on every animation frame:
+
+```jsx
+import { useAnimationFrame } from "motion"
+import { useRef } from "react"
+
+function Component() {
+  const ref = useRef(null)
+
+  useAnimationFrame((time, delta) => {
+    if (ref.current) {
+      ref.current.style.transform = `rotate(${time / 10}deg)`
+    }
+  })
+
+  return <div ref={ref}>Rotating</div>
+}
+```
+
+### useTime
+
+Get elapsed time since component mount:
+
+```jsx
+import { motion, useTime, useTransform } from "motion"
+
+function Component() {
+  const time = useTime()
+  const rotate = useTransform(
+    time,
+    [0, 4000],
+    [0, 360],
+    { clamp: false }
+  )
+
+  return <motion.div style={{ rotate }} />
+}
+```
+
+### useDragControls
+
+Manually control drag gestures:
+
+```jsx
+import { motion, useDragControls } from "motion"
+
+function Component() {
+  const dragControls = useDragControls()
+
+  function startDrag(event) {
+    dragControls.start(event, { snapToCursor: true })
+  }
+
+  return (
+    <>
+      <div onPointerDown={startDrag">
+        Drag handle
+      </div>
+      <motion.div
+        drag="x"
+        dragControls={dragControls}
+      />
+    </>
+  )
+}
+```
+
+**Methods:**
+- `start(event, options)` - Start dragging
+- `cancel()` - Cancel drag
+- `stop()` - Stop drag
+
+## Advanced Hooks
+
+### useAnimatedState
+
+**Note:** This is not officially supported and may be removed.
+
+Animate arbitrary state objects:
+
+```jsx
+import { useAnimatedState } from "motion"
+
+function Component() {
+  const [state, animate] = useAnimatedState({ x: 0, opacity: 1 })
+
+  return (
+    <div>
+      <button onClick={() => animate({ x: 100, opacity: 0.5 })">
+        Animate
+      </button>
+      <div
+        style={{
+          transform: `translateX(${state.x}px)`,
+          opacity: state.opacity
+        }}
+      >
+        Custom state
+      </div>
+    </div>
+  )
+}
+```
+
+## Combining Hooks
+
+Hooks can be combined for powerful effects:
+
+```jsx
+function ParallaxCard() {
+  const ref = useRef(null)
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"]
+  })
+
+  const y = useTransform(scrollYProgress, [0, 1], [100, -100])
+  const opacity = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [0, 1, 1, 0])
+
+  return (
+    <motion.div
+      ref={ref}
+      style={{ y, opacity }}
+    >
+      Parallax content
+    </motion.div>
+  )
+}
+```
+
+## Best Practices
+
+1. **Use `useMotionValue` for high-frequency updates** - Avoids re-renders
+2. **Memoize callbacks** - Especially with `useAnimationFrame`
+3. **Clean up subscriptions** - Motion values should be unsubscribed
+4. **Use hooks at top level** - Follow React's rules of hooks
+5. **Prefer declarative animations** - Use hooks for imperative control when needed

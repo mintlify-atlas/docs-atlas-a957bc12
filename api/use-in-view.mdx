@@ -1,0 +1,361 @@
+---
+title: 'useInView()'
+description: 'Hook for detecting when an element enters the viewport'
+icon: 'eye'
+---
+
+## Overview
+
+`useInView` returns a boolean indicating whether the referenced element is currently in the viewport. It uses the Intersection Observer API under the hood.
+
+## Import
+
+```tsx
+import { useInView } from 'framer-motion'
+```
+
+## Signature
+
+```tsx
+function useInView(
+  ref: RefObject<Element>,
+  options?: UseInViewOptions
+): boolean
+
+interface UseInViewOptions {
+  root?: RefObject<Element>
+  margin?: string
+  amount?: "some" | "all" | number
+  once?: boolean
+  initial?: boolean
+}
+```
+
+## Parameters
+
+### ref (required)
+
+A React ref attached to the element to observe.
+
+```tsx
+ref: RefObject<Element>
+```
+
+```jsx
+const ref = useRef(null)
+const isInView = useInView(ref)
+
+return <div ref={ref}>Content</div>
+```
+
+### root
+
+A ref to the scrolling container. If not provided, uses the viewport.
+
+```tsx
+root?: RefObject<Element>
+```
+
+```jsx
+const containerRef = useRef(null)
+const elementRef = useRef(null)
+const isInView = useInView(elementRef, { root: containerRef })
+
+return (
+  <div ref={containerRef} style={{ height: '400px', overflow: 'auto' }">
+    <div ref={elementRef}>Content</div>
+  </div>
+)
+```
+
+### margin
+
+Margin around the root element. Similar to CSS margin property.
+
+```tsx
+margin?: string
+```
+
+Accepts values like:
+- `"0px"` (all sides)
+- `"0px 0px"` (vertical horizontal)
+- `"0px 0px 0px 0px"` (top right bottom left)
+
+```jsx
+const isInView = useInView(ref, {
+  margin: "0px 100px -50px 0px"
+})
+```
+
+### amount
+
+How much of the element must be visible to trigger.
+
+```tsx
+amount?: "some" | "all" | number // default: "some"
+```
+
+- `"some"`: Any part of the element is visible
+- `"all"`: The entire element must be visible
+- `number`: A value between 0 and 1 representing the percentage
+
+```jsx
+// Trigger when 50% visible
+const isInView = useInView(ref, { amount: 0.5 })
+
+// Trigger when entire element is visible
+const isInView = useInView(ref, { amount: "all" })
+```
+
+### once
+
+If `true`, the element will remain "in view" after it first enters the viewport.
+
+```tsx
+once?: boolean // default: false
+```
+
+```jsx
+const isInView = useInView(ref, { once: true })
+```
+
+### initial
+
+The initial state before the element is checked.
+
+```tsx
+initial?: boolean // default: false
+```
+
+```jsx
+// Start as "in view" to prevent flash
+const isInView = useInView(ref, { initial: true })
+```
+
+## Return Value
+
+Returns a boolean indicating whether the element is in view.
+
+```tsx
+boolean
+```
+
+## Examples
+
+### Fade in on scroll
+
+```jsx
+import { useRef } from 'react'
+import { motion, useInView } from 'framer-motion'
+
+function FadeIn({ children }) {
+  const ref = useRef(null)
+  const isInView = useInView(ref, { once: true })
+
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 50 }}
+      animate={{
+        opacity: isInView ? 1 : 0,
+        y: isInView ? 0 : 50
+      }}
+      transition={{ duration: 0.5 }}
+    >
+      {children}
+    </motion.div>
+  )
+}
+```
+
+### Trigger animation once
+
+```jsx
+function AnimateOnce() {
+  const ref = useRef(null)
+  const isInView = useInView(ref, { once: true, amount: 0.5 })
+
+  return (
+    <motion.div
+      ref={ref}
+      animate={{
+        scale: isInView ? 1 : 0.8,
+        opacity: isInView ? 1 : 0
+      }}
+    >
+      Animates when 50% visible
+    </motion.div>
+  )
+}
+```
+
+### Stagger children on scroll
+
+```jsx
+function StaggerList() {
+  const ref = useRef(null)
+  const isInView = useInView(ref, { once: true })
+
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  }
+
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 }
+  }
+
+  return (
+    <motion.ul
+      ref={ref}
+      variants={container}
+      initial="hidden"
+      animate={isInView ? "show" : "hidden"}
+    >
+      {items.map((item, i) => (
+        <motion.li key={i} variants={item">
+          {item}
+        </motion.li>
+      ))}
+    </motion.ul>
+  )
+}
+```
+
+### Video autoplay on scroll
+
+```jsx
+function VideoAutoplay() {
+  const ref = useRef(null)
+  const videoRef = useRef(null)
+  const isInView = useInView(ref, { amount: 0.5 })
+
+  useEffect(() => {
+    if (isInView) {
+      videoRef.current?.play()
+    } else {
+      videoRef.current?.pause()
+    }
+  }, [isInView])
+
+  return (
+    <div ref={ref">
+      <video ref={videoRef} src="video.mp4" />
+    </div>
+  )
+}
+```
+
+### Scroll counter animation
+
+```jsx
+function Counter({ target }) {
+  const ref = useRef(null)
+  const isInView = useInView(ref, { once: true })
+  const [count, setCount] = useState(0)
+
+  useEffect(() => {
+    if (isInView) {
+      let start = 0
+      const end = target
+      const duration = 2000
+      const increment = end / (duration / 16)
+
+      const timer = setInterval(() => {
+        start += increment
+        if (start >= end) {
+          setCount(end)
+          clearInterval(timer)
+        } else {
+          setCount(Math.floor(start))
+        }
+      }, 16)
+
+      return () => clearInterval(timer)
+    }
+  }, [isInView, target])
+
+  return (
+    <div ref={ref">
+      <h2>{count}</h2>
+    </div>
+  )
+}
+```
+
+### Container scroll detection
+
+```jsx
+function ScrollContainer() {
+  const containerRef = useRef(null)
+  const elementRef = useRef(null)
+  const isInView = useInView(elementRef, {
+    root: containerRef,
+    margin: "0px",
+    amount: 0.5
+  })
+
+  return (
+    <div
+      ref={containerRef}
+      style={{ height: '400px', overflow: 'auto' }}
+    >
+      <div style={{ height: '800px' }">
+        <motion.div
+          ref={elementRef}
+          animate={{ opacity: isInView ? 1 : 0.3 }}
+        >
+          Visible in container: {isInView ? 'Yes' : 'No'}
+        </motion.div>
+      </div>
+    </div>
+  )
+}
+```
+
+### Progress indicator
+
+```jsx
+function SectionProgress() {
+  const sections = [
+    useRef(null),
+    useRef(null),
+    useRef(null)
+  ]
+  
+  const inView = [
+    useInView(sections[0], { amount: 0.5 }),
+    useInView(sections[1], { amount: 0.5 }),
+    useInView(sections[2], { amount: 0.5 })
+  ]
+
+  return (
+    <>
+      <nav>
+        {sections.map((_, i) => (
+          <div
+            key={i}
+            style={{
+              opacity: inView[i] ? 1 : 0.3,
+              transition: 'opacity 0.2s'
+            }}
+          >
+            Section {i + 1}
+          </div>
+        ))}
+      </nav>
+      {sections.map((ref, i) => (
+        <section key={i} ref={ref">
+          Section {i + 1} content
+        </section>
+      ))}
+    </>
+  )
+}
+```

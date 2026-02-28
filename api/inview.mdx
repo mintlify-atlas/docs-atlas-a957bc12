@@ -1,0 +1,362 @@
+---
+title: 'inView()'
+description: 'Function for detecting when elements enter the viewport'
+icon: 'eye-slash'
+---
+
+## Overview
+
+The `inView()` function detects when elements enter and leave the viewport. It provides a simple callback-based API built on the Intersection Observer API.
+
+## Import
+
+```tsx
+import { inView } from 'framer-motion'
+```
+
+## Signature
+
+```tsx
+function inView(
+  elementOrSelector: ElementOrSelector,
+  onStart: ViewChangeHandler,
+  options?: InViewOptions
+): VoidFunction
+
+type ElementOrSelector = Element | Element[] | string
+
+type ViewChangeHandler = (
+  element: Element,
+  entry: IntersectionObserverEntry
+) => void | ViewChangeHandler
+
+interface InViewOptions {
+  root?: Element | Document
+  margin?: string
+  amount?: "some" | "all" | number
+}
+```
+
+## Parameters
+
+### elementOrSelector (required)
+
+The element(s) to observe. Can be a single element, array of elements, or a CSS selector.
+
+```tsx
+elementOrSelector: Element | Element[] | string
+```
+
+```jsx
+// Single element
+const element = document.querySelector('.box')
+inView(element, (el) => {
+  console.log('Element entered view')
+})
+
+// CSS selector
+inView('.box', (el) => {
+  console.log('Element entered view')
+})
+
+// Multiple elements
+const elements = document.querySelectorAll('.box')
+inView(elements, (el) => {
+  console.log('Element entered view')
+})
+```
+
+### onStart (required)
+
+Callback function that fires when the element enters the viewport.
+
+```tsx
+onStart: (element: Element, entry: IntersectionObserverEntry) =>
+  void | ViewChangeHandler
+```
+
+Return a function to be called when the element leaves the viewport:
+
+```jsx
+inView('.box', (element, entry) => {
+  console.log('Entered view')
+  element.classList.add('visible')
+  
+  // Return cleanup function for when it leaves view
+  return (exitEntry) => {
+    console.log('Left view')
+    element.classList.remove('visible')
+  }
+})
+```
+
+### root
+
+The scrolling container. Defaults to the viewport.
+
+```tsx
+root?: Element | Document
+```
+
+```jsx
+const container = document.querySelector('.scroll-container')
+
+inView('.box', (el) => {
+  console.log('In view')
+}, { root: container })
+```
+
+### margin
+
+Margin around the root element. Similar to CSS margin.
+
+```tsx
+margin?: string
+```
+
+Accepts values like:
+- `"0px"`
+- `"0px 100px"`
+- `"0px 100px -50px 0px"`
+
+```jsx
+inView('.box', (el) => {
+  console.log('In view')
+}, {
+  margin: "0px 0px -100px 0px" // Trigger 100px before element is visible
+})
+```
+
+### amount
+
+How much of the element must be visible.
+
+```tsx
+amount?: "some" | "all" | number // default: "some"
+```
+
+- `"some"` (default): Any part visible triggers
+- `"all"`: Entire element must be visible
+- `number`: Percentage from 0 to 1
+
+```jsx
+// Trigger when 50% visible
+inView('.box', (el) => {
+  console.log('50% visible')
+}, { amount: 0.5 })
+
+// Trigger when completely visible
+inView('.box', (el) => {
+  console.log('Fully visible')
+}, { amount: "all" })
+```
+
+## Return Value
+
+Returns a cleanup function to stop observing.
+
+```tsx
+VoidFunction
+```
+
+```jsx
+const stopObserving = inView('.box', (el) => {
+  console.log('In view')
+})
+
+// Later, stop observing
+stopObserving()
+```
+
+## Examples
+
+### Basic usage
+
+```jsx
+import { inView } from 'framer-motion'
+
+inView('.fade-in', (element) => {
+  element.style.opacity = '1'
+  element.style.transform = 'translateY(0)'
+})
+```
+
+### Enter and exit animations
+
+```jsx
+inView('.animated', (element) => {
+  element.classList.add('visible')
+  
+  return () => {
+    element.classList.remove('visible')
+  }
+})
+```
+
+### Trigger once
+
+```jsx
+inView('.fade-in', (element) => {
+  element.style.opacity = '1'
+  // Don't return a function - won't observe exit
+})
+```
+
+### Stagger multiple elements
+
+```jsx
+inView('.stagger-item', (element, entry) => {
+  const index = Array.from(
+    document.querySelectorAll('.stagger-item')
+  ).indexOf(element)
+  
+  setTimeout(() => {
+    element.style.opacity = '1'
+    element.style.transform = 'translateY(0)'
+  }, index * 100)
+})
+```
+
+### With animation library
+
+```jsx
+import { animate, inView } from 'framer-motion'
+
+inView('.box', (element) => {
+  const animation = animate(
+    element,
+    { opacity: [0, 1], y: [50, 0] },
+    { duration: 0.5 }
+  )
+  
+  return () => {
+    animate(
+      element,
+      { opacity: 0, y: 50 },
+      { duration: 0.3 }
+    )
+  }
+})
+```
+
+### Lazy load images
+
+```jsx
+inView('img[data-src]', (img) => {
+  const src = img.getAttribute('data-src')
+  img.setAttribute('src', src)
+  img.removeAttribute('data-src')
+})
+```
+
+### Video autoplay
+
+```jsx
+inView('video[data-autoplay]', (video) => {
+  video.play()
+  
+  return () => {
+    video.pause()
+  }
+})
+```
+
+### Scroll-triggered counter
+
+```jsx
+inView('.counter', (element) => {
+  const target = parseInt(element.dataset.target)
+  let current = 0
+  const increment = target / 100
+  
+  const timer = setInterval(() => {
+    current += increment
+    if (current >= target) {
+      element.textContent = target
+      clearInterval(timer)
+    } else {
+      element.textContent = Math.floor(current)
+    }
+  }, 20)
+  
+  return () => clearInterval(timer)
+})
+```
+
+### Container scrolling
+
+```jsx
+const container = document.querySelector('.scroll-container')
+
+inView('.item', (element) => {
+  element.style.opacity = '1'
+  
+  return () => {
+    element.style.opacity = '0.3'
+  }
+}, {
+  root: container,
+  amount: 0.5
+})
+```
+
+### Track analytics
+
+```jsx
+inView('.section', (element, entry) => {
+  const sectionName = element.dataset.section
+  
+  // Track when section becomes visible
+  analytics.track('Section Viewed', {
+    section: sectionName,
+    timestamp: Date.now()
+  })
+  
+  return (exitEntry) => {
+    // Track when section leaves view
+    analytics.track('Section Left', {
+      section: sectionName,
+      timestamp: Date.now()
+    })
+  }
+}, { amount: 0.5 })
+```
+
+### Progressive disclosure
+
+```jsx
+const stopObserving = inView('.reveal', (element) => {
+  const delay = parseInt(element.dataset.delay || '0')
+  
+  setTimeout(() => {
+    element.classList.add('revealed')
+  }, delay)
+})
+
+// Clean up on page unload
+window.addEventListener('unload', stopObserving)
+```
+
+## IntersectionObserverEntry
+
+The entry object passed to callbacks contains:
+
+```tsx
+interface IntersectionObserverEntry {
+  boundingClientRect: DOMRectReadOnly
+  intersectionRatio: number
+  intersectionRect: DOMRectReadOnly
+  isIntersecting: boolean
+  rootBounds: DOMRectReadOnly | null
+  target: Element
+  time: number
+}
+```
+
+## Notes
+
+- Uses native Intersection Observer API
+- Automatically handles cleanup when elements are removed
+- Observes all matching elements when using a selector
+- More performant than scroll event listeners
+- Well supported in modern browsers

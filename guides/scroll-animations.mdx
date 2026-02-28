@@ -1,0 +1,410 @@
+---
+title: Scroll Animations
+description: Create scroll-linked animations and parallax effects
+---
+
+Motion provides powerful tools for linking animations to scroll position, enabling parallax effects, scroll progress indicators, and viewport-triggered animations.
+
+## useScroll Hook
+
+The `useScroll` hook tracks scroll position and progress:
+
+```jsx
+import { motion, useScroll } from "motion/react"
+
+export function Component() {
+  const { scrollY, scrollYProgress } = useScroll()
+  
+  return (
+    <motion.div
+      style={{
+        scaleX: scrollYProgress,
+        transformOrigin: "0%"
+      }}
+    />
+  )
+}
+```
+
+### Return Values
+
+- `scrollX` / `scrollY` - Absolute scroll position in pixels
+- `scrollXProgress` / `scrollYProgress` - Scroll progress from 0 to 1
+
+## Scroll Containers
+
+Track scroll within a specific element:
+
+```jsx
+import { useRef } from "react"
+import { motion, useScroll } from "motion/react"
+
+export function ScrollContainer() {
+  const containerRef = useRef(null)
+  const { scrollYProgress } = useScroll({
+    container: containerRef
+  })
+  
+  return (
+    <div 
+      ref={containerRef}
+      style={{ height: "50vh", overflow: "scroll" }}
+    >
+      <motion.div
+        style={{ scaleX: scrollYProgress }}
+      />
+      <div style={{ height: "200vh" }">
+        Scrollable content
+      </div>
+    </div>
+  )
+}
+```
+
+## Scroll Offsets
+
+Control when animations start and end:
+
+```jsx
+const { scrollYProgress } = useScroll({
+  offset: ["start end", "end start"]
+})
+```
+
+Offset format: `[start, end]` where each value is `"edge target"`
+
+**Edge options:** `start`, `center`, `end`, or pixel/percentage values
+**Target options:** `start`, `center`, `end`
+
+Common patterns:
+- `["start end", "end start"]` - Full viewport travel (parallax)
+- `["start start", "end end"]` - While element is in view
+- `["start end", "start start"]` - Fade in as enters
+- `["end end", "end start"]` - Fade out as exits
+
+## Target Elements
+
+Track a specific element's position:
+
+```jsx
+import { useRef } from "react"
+import { motion, useScroll, useTransform } from "motion/react"
+
+export function TrackedElement() {
+  const ref = useRef(null)
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"]
+  })
+  
+  const opacity = useTransform(scrollYProgress, [0, 0.5, 1], [0, 1, 0])
+  
+  return (
+    <motion.div
+      ref={ref}
+      style={{ opacity }}
+    >
+      Fades in and out
+    </motion.div>
+  )
+}
+```
+
+## Parallax Effects
+
+Create depth with different scroll speeds:
+
+```jsx
+import { motion, useScroll, useTransform } from "motion/react"
+
+export function ParallaxLayers() {
+  const { scrollY } = useScroll()
+  
+  const y1 = useTransform(scrollY, [0, 1000], [0, -200])  // Slow
+  const y2 = useTransform(scrollY, [0, 1000], [0, -400])  // Medium
+  const y3 = useTransform(scrollY, [0, 1000], [0, -600])  // Fast
+  
+  return (
+    <>
+      <motion.div style={{ y: y1 }} className="layer-back" />
+      <motion.div style={{ y: y2 }} className="layer-mid" />
+      <motion.div style={{ y: y3 }} className="layer-front" />
+    </>
+  )
+}
+```
+
+## Progress Indicator
+
+From the real codebase example in `useScroll.tsx:84-94`:
+
+```jsx
+import { useRef } from "react"
+import { motion, useScroll, useSpring } from "motion/react"
+
+export function ProgressBar() {
+  const containerRef = useRef(null)
+  const { scrollYProgress } = useScroll({ container: containerRef })
+  
+  const scaleX = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001
+  })
+  
+  return (
+    <div ref={containerRef} style={{ height: "50vh", overflow: "scroll" }">
+      <motion.div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 10,
+          background: "#0070f3",
+          scaleX,
+          transformOrigin: "0%"
+        }}
+      />
+      {/* Long content */}
+    </div>
+  )
+}
+```
+
+## Value Transformations
+
+Map scroll progress to different value ranges:
+
+```jsx
+import { useScroll, useTransform } from "motion/react"
+
+const { scrollYProgress } = useScroll()
+
+// Scale from 0.8 to 1
+const scale = useTransform(scrollYProgress, [0, 1], [0.8, 1])
+
+// Rotate from 0 to 180 degrees
+const rotate = useTransform(scrollYProgress, [0, 1], [0, 180])
+
+// Multiple input/output points for complex curves
+const opacity = useTransform(
+  scrollYProgress,
+  [0, 0.2, 0.8, 1],
+  [0, 1, 1, 0]
+)
+
+// Color interpolation
+const backgroundColor = useTransform(
+  scrollYProgress,
+  [0, 0.5, 1],
+  ["#ff0080", "#7928ca", "#0070f3"]
+)
+```
+
+## Scroll-Triggered Animations
+
+Trigger animations when elements enter viewport:
+
+```jsx
+import { motion, useScroll, useTransform } from "motion/react"
+import { useRef } from "react"
+
+export function ScrollReveal({ children }) {
+  const ref = useRef(null)
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start 0.9", "start 0.5"]  // Start at 90% viewport, end at 50%
+  })
+  
+  const opacity = useTransform(scrollYProgress, [0, 1], [0, 1])
+  const scale = useTransform(scrollYProgress, [0, 1], [0.8, 1])
+  const y = useTransform(scrollYProgress, [0, 1], [50, 0])
+  
+  return (
+    <motion.div
+      ref={ref}
+      style={{ opacity, scale, y }}
+    >
+      {children}
+    </motion.div>
+  )
+}
+```
+
+## Sticky Element Animations
+
+Animate while element is sticky:
+
+```jsx
+export function StickyAnimation() {
+  const ref = useRef(null)
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start start", "end start"]
+  })
+  
+  const rotate = useTransform(scrollYProgress, [0, 1], [0, 360])
+  
+  return (
+    <div ref={ref} style={{ height: "300vh" }">
+      <motion.div
+        style={{
+          position: "sticky",
+          top: 100,
+          rotate
+        }}
+      >
+        Rotates while scrolling
+      </motion.div>
+    </div>
+  )
+}
+```
+
+## Performance Optimization
+
+Motion uses native `ScrollTimeline` API when available for better performance. From `use-scroll.ts:52-64`:
+
+```typescript
+if (!target && canUseNativeTimeline()) {
+  const resolvedContainer = container?.current || undefined
+  values.scrollXProgress.accelerate = makeAccelerateConfig(
+    "x",
+    options,
+    resolvedContainer
+  )
+  values.scrollYProgress.accelerate = makeAccelerateConfig(
+    "y",
+    options,
+    resolvedContainer
+  )
+}
+```
+
+This offloads scroll animations to the browser's compositor thread for smoother performance.
+
+## Advanced Patterns
+
+### Horizontal Scroll Section
+
+```jsx
+export function HorizontalScroll() {
+  const containerRef = useRef(null)
+  const { scrollYProgress } = useScroll({
+    target: containerRef
+  })
+  
+  const x = useTransform(scrollYProgress, [0, 1], ["0%", "-300%"])
+  
+  return (
+    <div ref={containerRef} style={{ height: "400vh" }">
+      <div style={{ position: "sticky", top: 0, overflow: "hidden" }">
+        <motion.div
+          style={{ x, display: "flex" }}
+        >
+          <div style={{ minWidth: "100vw" }}>Section 1</div>
+          <div style={{ minWidth: "100vw" }}>Section 2</div>
+          <div style={{ minWidth: "100vw" }}>Section 3</div>
+          <div style={{ minWidth: "100vw" }}>Section 4</div>
+        </motion.div>
+      </div>
+    </div>
+  )
+}
+```
+
+### Scroll-Based Timeline
+
+```jsx
+export function ScrollTimeline() {
+  const { scrollYProgress } = useScroll()
+  
+  const step1Opacity = useTransform(scrollYProgress, 
+    [0, 0.25, 0.25, 1], 
+    [0, 1, 1, 1]
+  )
+  const step2Opacity = useTransform(scrollYProgress,
+    [0, 0.25, 0.5, 1],
+    [0, 0, 1, 1]
+  )
+  const step3Opacity = useTransform(scrollYProgress,
+    [0, 0.5, 0.75, 1],
+    [0, 0, 1, 1]
+  )
+  
+  return (
+    <div style={{ height: "300vh" }">
+      <motion.div style={{ opacity: step1Opacity }}>Step 1</motion.div>
+      <motion.div style={{ opacity: step2Opacity }}>Step 2</motion.div>
+      <motion.div style={{ opacity: step3Opacity }}>Step 3</motion.div>
+    </div>
+  )
+}
+```
+
+### Smooth Scroll Container
+
+Combine scroll tracking with spring physics:
+
+```jsx
+import { useRef } from "react"
+import { motion, useScroll, useSpring, useTransform } from "motion/react"
+
+export function SmoothParallax() {
+  const ref = useRef(null)
+  const { scrollYProgress } = useScroll({ target: ref })
+  
+  // Smooth the scroll progress
+  const smoothProgress = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001
+  })
+  
+  const y = useTransform(smoothProgress, [0, 1], ["0%", "50%"])
+  
+  return (
+    <div ref={ref} style={{ height: "200vh" }">
+      <motion.div style={{ y }">
+        Smooth parallax content
+      </motion.div>
+    </div>
+  )
+}
+```
+
+## Tips
+
+<Tip>
+  **Use `scrollYProgress` for most animations** - It's normalized to 0-1, making it easier to work with.
+</Tip>
+
+<Tip>
+  **Combine with `useSpring()`** - Add physics-based smoothing to scroll animations for more natural motion.
+</Tip>
+
+<Tip>
+  **Test on mobile** - Scroll performance varies significantly on touch devices. Use native acceleration when possible.
+</Tip>
+
+<Warning>
+  **Avoid animating too many elements** - Each scroll-linked animation requires calculation on every scroll event. Limit to 10-20 animated elements for best performance.
+</Warning>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Spring Animations" icon="wave-pulse" href="/guides/spring-animations">
+    Add physics to scroll animations
+  </Card>
+  <Card title="Performance" icon="gauge-high" href="/guides/performance">
+    Optimize scroll performance
+  </Card>
+  <Card title="Layout Transitions" icon="arrows-maximize" href="/guides/layout-transitions">
+    Combine with layout animations
+  </Card>
+  <Card title="Drag Interactions" icon="hand" href="/guides/drag-interactions">
+    Mix scroll with drag gestures
+  </Card>
+</CardGroup>

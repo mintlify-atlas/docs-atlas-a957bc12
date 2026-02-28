@@ -1,0 +1,474 @@
+---
+title: useAnimate()
+description: React hook for imperative animations with automatic cleanup and scoped selectors
+---
+
+`useAnimate()` is a React hook that provides imperative animation control with automatic cleanup. It returns a ref (scope) and an animate function that can target elements within that scope.
+
+## Signature
+
+```typescript
+function useAnimate<T extends Element = any>(): [
+  scope: AnimationScope<T>,
+  animate: typeof createScopedAnimate
+]
+```
+
+## Return Value
+
+<ResponseField name="scope" type="AnimationScope<T>">
+  A React ref object to attach to your container element. All animations will be scoped to this element and its descendants.
+  
+  <Expandable title="properties">
+    <ResponseField name="current" type="T">
+      The DOM element (same as a regular React ref)
+    </ResponseField>
+    
+    <ResponseField name="animations" type="AnimationPlaybackControls[]">
+      Array of currently active animations within this scope
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="animate" type="function">
+  Scoped animation function. Works like [`animate()`](/api/animate) but targets elements within the scope.
+  
+  Supports all the same overloads:
+  - `animate(element, keyframes, options)`
+  - `animate(selector, keyframes, options)` - **selector is scoped to the ref**
+  - `animate(sequence, options)`
+  - `animate(value, keyframes, options)`
+</ResponseField>
+
+## Automatic Cleanup
+
+All animations are automatically stopped when the component unmounts, preventing memory leaks and warnings.
+
+## Examples
+
+### Basic Usage
+
+```jsx
+import { useAnimate } from "motion/react"
+import { useEffect } from "react"
+
+function Component() {
+  const [scope, animate] = useAnimate()
+  
+  useEffect(() => {
+    animate(scope.current, { x: 100 }, { duration: 1 })
+  }, [])
+  
+  return <div ref={scope}>Animates on mount</div>
+}
+```
+
+### Animate Child Elements
+
+```jsx
+import { useAnimate } from "motion/react"
+
+function Component() {
+  const [scope, animate] = useAnimate()
+  
+  return (
+    <div ref={scope">
+      <div className="box" />
+      <div className="circle" />
+      
+      <button
+        onClick={() => {
+          // Selectors are scoped to the ref
+          animate(".box", { x: 100 })
+        }}
+      >
+        Animate Box
+      </button>
+    </div>
+  )
+}
+```
+
+### Animation Sequences
+
+```jsx
+import { useAnimate } from "motion/react"
+
+function Component() {
+  const [scope, animate] = useAnimate()
+  
+  async function sequence() {
+    await animate(".box", { x: 100 })
+    await animate(".circle", { scale: 2 })
+    await animate(".box", { rotate: 180 })
+  }
+  
+  return (
+    <div ref={scope">
+      <div className="box" />
+      <div className="circle" />
+      <button onClick={sequence}>Run Sequence</button>
+    </div>
+  )
+}
+```
+
+### Parallel Animations
+
+```jsx
+import { useAnimate } from "motion/react"
+
+function Component() {
+  const [scope, animate] = useAnimate()
+  
+  function animateAll() {
+    // Start all at once (don't await)
+    animate(".box", { x: 100 })
+    animate(".circle", { scale: 2 })
+    animate(".triangle", { rotate: 180 })
+  }
+  
+  return (
+    <div ref={scope">
+      <div className="box" />
+      <div className="circle" />
+      <div className="triangle" />
+      <button onClick={animateAll}>Animate All</button>
+    </div>
+  )
+}
+```
+
+### Stagger Children
+
+```jsx
+import { useAnimate, stagger } from "motion/react"
+import { useEffect } from "react"
+
+function List({ items }) {
+  const [scope, animate] = useAnimate()
+  
+  useEffect(() => {
+    animate(
+      "li",
+      { opacity: 1, x: 0 },
+      { delay: stagger(0.1) }
+    )
+  }, [])
+  
+  return (
+    <ul ref={scope">
+      {items.map(item => (
+        <li key={item.id} style={{ opacity: 0, x: -50 }">
+          {item.text}
+        </li>
+      ))}
+    </ul>
+  )
+}
+```
+
+### Complex Sequence
+
+```jsx
+import { useAnimate } from "motion/react"
+
+function Menu() {
+  const [scope, animate] = useAnimate()
+  
+  async function openMenu() {
+    await animate(scope.current, { scale: 1 }, { duration: 0.2 })
+    await animate(
+      "li",
+      { opacity: 1, x: 0 },
+      { delay: stagger(0.05, { from: "first" }) }
+    )
+  }
+  
+  async function closeMenu() {
+    await animate(
+      "li",
+      { opacity: 0, x: -20 },
+      { delay: stagger(0.05, { from: "last" }) }
+    )
+    await animate(scope.current, { scale: 0 })
+  }
+  
+  return (
+    <div>
+      <button onClick={openMenu}>Open</button>
+      <button onClick={closeMenu}>Close</button>
+      
+      <ul ref={scope} style={{ scale: 0 }">
+        <li style={{ opacity: 0, x: -20 }}>Item 1</li>
+        <li style={{ opacity: 0, x: -20 }}>Item 2</li>
+        <li style={{ opacity: 0, x: -20 }}>Item 3</li>
+      </ul>
+    </div>
+  )
+}
+```
+
+### Animate on Interaction
+
+```jsx
+import { useAnimate } from "motion/react"
+
+function Button() {
+  const [scope, animate] = useAnimate()
+  
+  async function handleClick() {
+    // Animate button
+    await animate(scope.current, { scale: 0.9 })
+    await animate(scope.current, { scale: 1 })
+    
+    // Then animate icon
+    await animate(".icon", { rotate: 360 })
+  }
+  
+  return (
+    <button ref={scope} onClick={handleClick">
+      <span className="icon">✓</span>
+      Click Me
+    </button>
+  )
+}
+```
+
+### Control Playback
+
+```jsx
+import { useAnimate } from "motion/react"
+import { useState } from "react"
+
+function Component() {
+  const [scope, animate] = useAnimate()
+  const [animation, setAnimation] = useState(null)
+  
+  function startAnimation() {
+    const anim = animate(
+      ".box",
+      { x: 200 },
+      { duration: 2 }
+    )
+    setAnimation(anim)
+  }
+  
+  return (
+    <div ref={scope">
+      <div className="box" />
+      
+      <button onClick={startAnimation}>Start</button>
+      <button onClick={() => animation?.pause()}>Pause</button>
+      <button onClick={() => animation?.play()}>Resume</button>
+      <button onClick={() => animation?.stop()}>Stop</button>
+    </div>
+  )
+}
+```
+
+### Animate Multiple Elements
+
+```jsx
+import { useAnimate } from "motion/react"
+
+function Gallery() {
+  const [scope, animate] = useAnimate()
+  
+  function shuffleImages() {
+    // Animate all images at once
+    const images = scope.current.querySelectorAll("img")
+    
+    images.forEach((img, i) => {
+      animate(
+        img,
+        { 
+          x: Math.random() * 200,
+          y: Math.random() * 200 
+        },
+        { 
+          delay: i * 0.05,
+          duration: 0.5
+        }
+      )
+    })
+  }
+  
+  return (
+    <div ref={scope">
+      <img src="1.jpg" />
+      <img src="2.jpg" />
+      <img src="3.jpg" />
+      <button onClick={shuffleImages}>Shuffle</button>
+    </div>
+  )
+}
+```
+
+### Integration with State
+
+```jsx
+import { useAnimate } from "motion/react"
+import { useEffect } from "react"
+
+function Notification({ isVisible }) {
+  const [scope, animate] = useAnimate()
+  
+  useEffect(() => {
+    if (isVisible) {
+      animate(
+        scope.current,
+        { opacity: 1, y: 0 },
+        { duration: 0.3 }
+      )
+    } else {
+      animate(
+        scope.current,
+        { opacity: 0, y: -20 },
+        { duration: 0.3 }
+      )
+    }
+  }, [isVisible])
+  
+  return (
+    <div ref={scope} style={{ opacity: 0, y: -20 }">
+      Notification message
+    </div>
+  )
+}
+```
+
+### Custom Animation Hook
+
+```jsx
+import { useAnimate } from "motion/react"
+import { useEffect } from "react"
+
+function useFadeIn(delay = 0) {
+  const [scope, animate] = useAnimate()
+  
+  useEffect(() => {
+    animate(
+      scope.current,
+      { opacity: 1 },
+      { duration: 0.5, delay }
+    )
+  }, [])
+  
+  return scope
+}
+
+function Component() {
+  const scope = useFadeIn(0.5)
+  
+  return (
+    <div ref={scope} style={{ opacity: 0 }">
+      Fades in with delay
+    </div>
+  )
+}
+```
+
+## Active Animations
+
+Track currently running animations:
+
+```jsx
+import { useAnimate } from "motion/react"
+
+function Component() {
+  const [scope, animate] = useAnimate()
+  
+  function checkAnimations() {
+    console.log(
+      `${scope.animations.length} animations running`
+    )
+  }
+  
+  return (
+    <div ref={scope">
+      <div className="box" />
+      <button onClick={() => {
+        animate(".box", { x: 100 }, { duration: 2 })
+        setTimeout(checkAnimations, 100) // Shows: 1 animations running
+      }">
+        Animate
+      </button>
+    </div>
+  )
+}
+```
+
+## Type Definitions
+
+```typescript
+interface AnimationScope<T = any> {
+  readonly current: T
+  animations: AnimationPlaybackControls[]
+}
+
+type ScopedAnimate = {
+  // Animate element
+  (element: ElementOrSelector, keyframes: DOMKeyframesDefinition, options?: AnimationOptions): AnimationPlaybackControls
+  
+  // Animate value  
+  <V>(value: V | MotionValue<V>, keyframes: V | V[], options?: ValueAnimationTransition<V>): AnimationPlaybackControls
+  
+  // Animate object
+  <O>(object: O | O[], keyframes: ObjectTarget<O>, options?: AnimationOptions): AnimationPlaybackControls
+  
+  // Animate sequence
+  (sequence: AnimationSequence, options?: SequenceOptions): AnimationPlaybackControls
+}
+```
+
+## Comparison with AnimationControls
+
+<CodeGroup>
+```jsx useAnimate (Modern)
+import { useAnimate } from "motion/react"
+
+function Component() {
+  const [scope, animate] = useAnimate()
+  
+  return (
+    <div ref={scope">
+      <div className="box" />
+      <button onClick={() => animate(".box", { x: 100 })">
+        Animate
+      </button>
+    </div>
+  )
+}
+```
+
+```jsx AnimationControls (Legacy)
+import { motion, useAnimation } from "motion/react"
+
+function Component() {
+  const controls = useAnimation()
+  
+  return (
+    <div>
+      <motion.div className="box" animate={controls} />
+      <button onClick={() => controls.start({ x: 100 })">
+        Animate
+      </button>
+    </div>
+  )
+}
+```
+</CodeGroup>
+
+Benefits of `useAnimate`:
+- Works with regular HTML elements
+- Scoped CSS selectors
+- Cleaner syntax for sequences
+- Automatic cleanup
+- Better TypeScript support
+
+## See Also
+
+- [animate()](/api/animate) - Imperative animation function
+- [stagger()](/api/stagger) - Stagger animation delays
+- [AnimationControls](/api/animation-controls) - Legacy alternative

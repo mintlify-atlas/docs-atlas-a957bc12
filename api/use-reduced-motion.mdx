@@ -1,0 +1,146 @@
+---
+title: useReducedMotion()
+description: React hook that returns whether the user prefers reduced motion
+---
+
+## Overview
+
+The `useReducedMotion()` hook returns a boolean indicating whether the user has enabled reduced motion preferences on their device. This allows you to create accessible animations that respect user preferences for motion.
+
+## Import
+
+```jsx
+import { useReducedMotion } from "motion/react"
+```
+
+## Usage
+
+```jsx
+import { motion, useReducedMotion } from "motion/react"
+
+function Component() {
+  const shouldReduceMotion = useReducedMotion()
+  
+  return (
+    <motion.div
+      animate={{
+        x: shouldReduceMotion ? 0 : 100,
+        opacity: 1
+      }}
+    />
+  )
+}
+```
+
+## Return Value
+
+<ResponseField name="shouldReduceMotion" type="boolean">
+  Returns `true` if the user has enabled reduced motion in their system preferences, `false` otherwise.
+</ResponseField>
+
+## Examples
+
+### Conditional Animation Type
+
+Replace motion-intensive animations with simpler alternatives:
+
+```jsx
+import { motion, useReducedMotion } from "motion/react"
+
+function Sidebar({ isOpen }) {
+  const shouldReduceMotion = useReducedMotion()
+  const closedX = shouldReduceMotion ? 0 : "-100%"
+  
+  return (
+    <motion.div
+      animate={{
+        opacity: isOpen ? 1 : 0,
+        x: isOpen ? 0 : closedX
+      }}
+    />
+  )
+}
+```
+
+### Disable Autoplay
+
+Disable autoplay features that might cause motion sickness:
+
+```jsx
+import { motion, useReducedMotion } from "motion/react"
+
+function VideoBackground() {
+  const shouldReduceMotion = useReducedMotion()
+  
+  return (
+    <video
+      autoPlay={!shouldReduceMotion}
+      loop={!shouldReduceMotion}
+      muted
+    >
+      <source src="background.mp4" type="video/mp4" />
+    </video>
+  )
+}
+```
+
+### Adjust Animation Duration
+
+Reduce animation duration for users with motion sensitivity:
+
+```jsx
+import { motion, useReducedMotion } from "motion/react"
+
+function Card() {
+  const shouldReduceMotion = useReducedMotion()
+  
+  return (
+    <motion.div
+      whileHover={{ scale: 1.05 }}
+      transition={{
+        duration: shouldReduceMotion ? 0 : 0.3
+      }}
+    />
+  )
+}
+```
+
+## Behavior
+
+- The hook reads the user's `prefers-reduced-motion` media query preference
+- Returns `true` when the media query matches `reduce`
+- Returns `false` when the media query matches `no-preference`
+- Initializes lazily on first use for optimal performance
+- Currently returns the initial state and does not respond to live changes
+
+## Accessibility
+
+### Best Practices
+
+<AccordionGroup>
+  <Accordion title="Replace movement animations">
+    For users with motion sensitivity, replace `x`, `y`, `rotate`, and `scale` animations with `opacity` fades or instant state changes.
+  </Accordion>
+
+  <Accordion title="Maintain functional clarity">
+    Even with reduced motion, ensure that state changes are still visually clear. Use opacity, color changes, or other non-motion cues.
+  </Accordion>
+
+  <Accordion title="Test with system settings">
+    Enable "Reduce Motion" in your OS accessibility settings to test the user experience:
+    - **macOS**: System Preferences → Accessibility → Display → Reduce motion
+    - **iOS**: Settings → Accessibility → Motion → Reduce Motion
+    - **Windows**: Settings → Ease of Access → Display → Show animations
+  </Accordion>
+</AccordionGroup>
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="MotionConfig" href="/api/motion-config" icon="gear">
+    Configure reduced motion globally
+  </Card>
+  <Card title="Accessibility Guide" href="/guides/accessibility" icon="universal-access">
+    Learn more about accessible animations
+  </Card>
+</CardGroup>

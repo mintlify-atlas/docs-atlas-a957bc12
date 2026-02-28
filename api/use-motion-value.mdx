@@ -1,0 +1,119 @@
+---
+title: useMotionValue
+description: Create a MotionValue to track state and velocity of animated values
+---
+
+## Overview
+
+Creates a `MotionValue` to track the state and velocity of a value. Usually, these are created automatically by Motion components. For advanced use cases, you can create `MotionValue`s externally and pass them into components via the `style` prop.
+
+## Import
+
+```jsx
+import { useMotionValue } from "motion/react"
+```
+
+## Signature
+
+```typescript
+function useMotionValue<T>(initial: T): MotionValue<T>
+```
+
+### Parameters
+
+<ParamField path="initial" type="T" required>
+  The initial state value
+</ParamField>
+
+### Returns
+
+<ResponseField name="MotionValue" type="MotionValue<T>">
+  A `MotionValue` instance that tracks the state and velocity of the provided value
+</ResponseField>
+
+## Usage
+
+### Basic Usage
+
+Create a motion value and use it in a component:
+
+```jsx
+import { motion, useMotionValue } from "motion/react"
+
+export function Component() {
+  const scale = useMotionValue(1)
+
+  return <motion.div style={{ scale }} />
+}
+```
+
+### With Transform
+
+Motion values work seamlessly with `useTransform` for derived values:
+
+```jsx
+import { motion, useMotionValue, useTransform } from "motion/react"
+
+export function Component() {
+  const x = useMotionValue(0)
+  const opacity = useTransform(x, [-200, 0, 200], [0, 1, 0])
+
+  return <motion.div style={{ x, opacity }} />
+}
+```
+
+### Updating Values
+
+Use the `set()` method to update motion values:
+
+```jsx
+import { motion, useMotionValue } from "motion/react"
+
+export function Component() {
+  const x = useMotionValue(0)
+
+  return (
+    <motion.div
+      style={{ x }}
+      onTap={() => x.set(100)}
+    />
+  )
+}
+```
+
+### Subscribing to Changes
+
+Listen to value changes with the `on()` method:
+
+```jsx
+import { useEffect } from "react"
+import { useMotionValue } from "motion/react"
+
+export function Component() {
+  const x = useMotionValue(0)
+
+  useEffect(() => {
+    const unsubscribe = x.on("change", (latest) => {
+      console.log("x changed to", latest)
+    })
+
+    return unsubscribe
+  }, [])
+
+  return <motion.div style={{ x }} />
+}
+```
+
+## Notes
+
+- Motion values created with `useMotionValue` exist outside of React's render cycle
+- Changes to motion values don't trigger component re-renders
+- In static mode (e.g., Framer canvas), components automatically re-render when motion values update
+- Motion values automatically track velocity for physics-based animations
+
+## Related
+
+- [MotionValue](/api/motion-value) - The MotionValue class API
+- [useTransform](/api/use-transform) - Transform motion values
+- [useSpring](/api/use-spring) - Add spring physics to motion values
+- [useVelocity](/api/use-velocity) - Track velocity of motion values

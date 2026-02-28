@@ -1,0 +1,520 @@
+---
+title: Variants
+description: Type definitions for animation variants
+---
+
+## Overview
+
+Variants allow you to define animation states by name and orchestrate animations across component trees. They provide a powerful way to organize and coordinate complex animations.
+
+## Import
+
+```typescript
+import type { Variants, Variant, VariantLabels } from "motion/react"
+```
+
+## Type Definitions
+
+### Variants
+
+A collection of named animation states:
+
+```typescript
+interface Variants {
+  [key: string]: Variant
+}
+```
+
+### Variant
+
+A single animation state, either static or dynamic:
+
+```typescript
+type Variant = TargetAndTransition | TargetResolver
+```
+
+### TargetAndTransition
+
+Static animation state with optional transition:
+
+```typescript
+type TargetAndTransition = Target & {
+  transition?: Transition
+  transitionEnd?: ResolvedValues
+}
+```
+
+### TargetResolver
+
+Dynamic animation state computed at runtime:
+
+```typescript
+type TargetResolver = (
+  custom: any,
+  current: ResolvedValues,
+  velocity: ResolvedValues
+) => TargetAndTransition | string
+```
+
+### VariantLabels
+
+Reference to one or more variants:
+
+```typescript
+type VariantLabels = string | string[]
+```
+
+## Properties
+
+### Target
+
+Animation target values:
+
+```typescript
+interface Target {
+  // Any animatable CSS property
+  [property: string]: ValueKeyframesDefinition
+}
+```
+
+<ParamField path="property" type="ValueKeyframesDefinition">
+  Single value, array of values, or array with `null` placeholders:
+  - `opacity: 1`
+  - `x: [0, 100, 0]`
+  - `scale: [null, 1.2, 1]` (keeps current value)
+</ParamField>
+
+### Transition
+
+<ParamField path="transition" type="Transition">
+  Optional transition override for this variant.
+</ParamField>
+
+### TransitionEnd
+
+<ParamField path="transitionEnd" type="ResolvedValues">
+  Values to set instantly when animation completes.
+</ParamField>
+
+## Examples
+
+### Basic Variants
+
+```jsx
+import { motion, Variants } from "motion/react"
+
+const variants: Variants = {
+  hidden: {
+    opacity: 0,
+    y: 20
+  },
+  visible: {
+    opacity: 1,
+    y: 0
+  }
+}
+
+function Component() {
+  return (
+    <motion.div
+      variants={variants}
+      initial="hidden"
+      animate="visible"
+    />
+  )
+}
+```
+
+### With Transitions
+
+```jsx
+const variants: Variants = {
+  initial: {
+    scale: 0,
+    rotate: 0
+  },
+  animate: {
+    scale: 1,
+    rotate: 360,
+    transition: {
+      duration: 0.5,
+      ease: "easeOut"
+    }
+  }
+}
+```
+
+### With TransitionEnd
+
+```jsx
+const variants: Variants = {
+  open: {
+    height: "auto",
+    transition: { duration: 0.3 },
+    transitionEnd: {
+      display: "block"
+    }
+  },
+  closed: {
+    height: 0,
+    transitionEnd: {
+      display: "none"
+    }
+  }
+}
+```
+
+### Dynamic Variants
+
+Use functions for runtime-computed values:
+
+```jsx
+const variants: Variants = {
+  visible: (custom) => ({
+    opacity: 1,
+    transition: {
+      delay: custom * 0.2
+    }
+  }),
+  hidden: {
+    opacity: 0
+  }
+}
+
+function List({ items }) {
+  return (
+    <>
+      {items.map((item, i) => (
+        <motion.div
+          key={item.id}
+          custom={i}
+          variants={variants}
+          initial="hidden"
+          animate="visible"
+        />
+      ))}
+    </>
+  )
+}
+```
+
+### Accessing Current Values
+
+```jsx
+const variants: Variants = {
+  shift: (custom, current, velocity) => {
+    const isMovingRight = velocity.x > 0
+    return {
+      x: isMovingRight ? current.x + 100 : current.x - 100,
+      transition: { duration: 0.3 }
+    }
+  }
+}
+```
+
+### Returning Variant Names
+
+Dynamic variants can return other variant names:
+
+```jsx
+const variants: Variants = {
+  active: { scale: 1.2 },
+  inactive: { scale: 1 },
+  
+  // Returns variant name based on custom prop
+  current: (isActive) => isActive ? "active" : "inactive"
+}
+
+<motion.div
+  variants={variants}
+  animate="current"
+  custom={isActive}
+/>
+```
+
+### Orchestrating Children
+
+```jsx
+const containerVariants: Variants = {
+  hidden: {
+    opacity: 0
+  },
+  visible: {
+    opacity: 1,
+    transition: {
+      delayChildren: 0.3,
+      staggerChildren: 0.1
+    }
+  }
+}
+
+const itemVariants: Variants = {
+  hidden: {
+    opacity: 0,
+    y: 20
+  },
+  visible: {
+    opacity: 1,
+    y: 0
+  }
+}
+
+function List() {
+  return (
+    <motion.ul
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      <motion.li variants={itemVariants} />
+      <motion.li variants={itemVariants} />
+      <motion.li variants={itemVariants} />
+    </motion.ul>
+  )
+}
+```
+
+### Multiple Variant Labels
+
+```jsx
+const variants: Variants = {
+  fadeIn: { opacity: 1 },
+  slideIn: { x: 0 },
+  scaleIn: { scale: 1 }
+}
+
+// Apply multiple variants
+<motion.div
+  variants={variants}
+  animate={["fadeIn", "slideIn", "scaleIn"]}
+/>
+```
+
+### Keyframe Variants
+
+```jsx
+const variants: Variants = {
+  wobble: {
+    rotate: [0, 10, -10, 10, 0],
+    transition: {
+      duration: 0.5,
+      ease: "easeInOut"
+    }
+  }
+}
+```
+
+### Per-Property Transitions
+
+```jsx
+const variants: Variants = {
+  animate: {
+    x: 100,
+    opacity: 1,
+    transition: {
+      x: {
+        type: "spring",
+        stiffness: 300
+      },
+      opacity: {
+        duration: 0.5
+      }
+    }
+  }
+}
+```
+
+## Variant Propagation
+
+Variants automatically propagate to children:
+
+```jsx
+const parent: Variants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1 }
+}
+
+const child: Variants = {
+  hidden: { x: -20 },
+  visible: { x: 0 }
+}
+
+<motion.div variants={parent} animate="visible">
+  {/* Automatically animates to "visible" variant */}
+  <motion.div variants={child} />
+</motion.div>
+```
+
+### Disabling Propagation
+
+```jsx
+<motion.div animate="visible">
+  {/* Won't inherit "visible" from parent */}
+  <motion.div inherit={false} />
+</motion.div>
+```
+
+## Advanced Patterns
+
+### Conditional Variants
+
+```jsx
+const variants: Variants = {
+  default: { scale: 1 },
+  hover: (isDisabled) => 
+    isDisabled ? {} : { scale: 1.1 },
+  tap: (isDisabled) => 
+    isDisabled ? {} : { scale: 0.95 }
+}
+
+<motion.button
+  variants={variants}
+  whileHover="hover"
+  whileTap="tap"
+  custom={isDisabled}
+/>
+```
+
+### Exit Variants
+
+```jsx
+import { AnimatePresence } from "motion/react"
+
+const variants: Variants = {
+  initial: { opacity: 0, scale: 0.8 },
+  animate: { opacity: 1, scale: 1 },
+  exit: { 
+    opacity: 0, 
+    scale: 0.8,
+    transition: { duration: 0.2 }
+  }
+}
+
+<AnimatePresence>
+  {isVisible && (
+    <motion.div
+      variants={variants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+    />
+  )}
+</AnimatePresence>
+```
+
+### Gesture Variants
+
+```jsx
+const variants: Variants = {
+  rest: { scale: 1 },
+  hover: { scale: 1.1 },
+  tap: { scale: 0.95 },
+  drag: { scale: 1.05 }
+}
+
+<motion.div
+  variants={variants}
+  initial="rest"
+  whileHover="hover"
+  whileTap="tap"
+  whileDrag="drag"
+  drag
+/>
+```
+
+### Viewport Variants
+
+```jsx
+const variants: Variants = {
+  offscreen: {
+    y: 100,
+    opacity: 0
+  },
+  onscreen: {
+    y: 0,
+    opacity: 1,
+    transition: {
+      type: "spring",
+      bounce: 0.4,
+      duration: 0.8
+    }
+  }
+}
+
+<motion.div
+  variants={variants}
+  initial="offscreen"
+  whileInView="onscreen"
+  viewport={{ once: true, amount: 0.8 }}
+/>
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Name variants semantically">
+    Use descriptive names that represent states, not animations:
+    ```jsx
+    // Good
+    { open: {...}, closed: {...} }
+    
+    // Avoid
+    { fadeIn: {...}, fadeOut: {...} }
+    ```
+  </Accordion>
+
+  <Accordion title="Keep variants at the top level">
+    Define variants outside components to prevent recreation on every render:
+    ```jsx
+    // Good
+    const variants: Variants = {...}
+    function Component() {...}
+    
+    // Avoid
+    function Component() {
+      const variants: Variants = {...}
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Use dynamic variants for computed values">
+    When values depend on props or state, use dynamic variants:
+    ```jsx
+    const variants: Variants = {
+      visible: (custom) => ({
+        x: custom.offset,
+        transition: { delay: custom.delay }
+      })
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Leverage propagation">
+    Design parent and child variants to work together for coordinated animations:
+    ```jsx
+    const container: Variants = {
+      visible: { transition: { staggerChildren: 0.1 } }
+    }
+    const item: Variants = {
+      visible: { opacity: 1, y: 0 }
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Related Types
+
+<CardGroup cols={2}>
+  <Card title="Transition" href="/api/types/transition" icon="clock">
+    Transition configuration
+  </Card>
+  <Card title="MotionProps" href="/api/types/motion-props" icon="cube">
+    Motion component props
+  </Card>
+  <Card title="Target" href="/api/types/target" icon="bullseye">
+    Animation target values
+  </Card>
+  <Card title="Variants Guide" href="/concepts/variants" icon="layer-group">
+    Learn about variants
+  </Card>
+</CardGroup>

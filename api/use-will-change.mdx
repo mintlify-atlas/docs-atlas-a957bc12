@@ -1,0 +1,242 @@
+---
+title: useWillChange()
+description: React hook that returns a WillChange motion value for performance optimization
+---
+
+## Overview
+
+The `useWillChange()` hook returns a `WillChange` motion value that automatically manages the CSS `will-change` property. This helps browsers optimize rendering performance for animated elements.
+
+## Import
+
+```jsx
+import { useWillChange } from "motion/react"
+```
+
+## Usage
+
+```jsx
+import { motion, useWillChange } from "motion/react"
+
+function Component() {
+  const willChange = useWillChange()
+  
+  return (
+    <motion.div
+      style={{ willChange }}
+      animate={{ x: 100, opacity: 0.5 }}
+    />
+  )
+}
+```
+
+## Return Value
+
+<ResponseField name="willChange" type="WillChange">
+  A special `MotionValue` that extends the standard `MotionValue<string>` interface with an `add()` method.
+</ResponseField>
+
+### WillChange Interface
+
+```typescript
+interface WillChange extends MotionValue<string> {
+  add(name: string): void
+}
+```
+
+## How It Works
+
+The `useWillChange()` hook automatically manages the `will-change` CSS property:
+
+1. When animating transform or accelerated properties, it sets `will-change: transform`
+2. When animations complete, it resets to `will-change: auto`
+3. This hints to the browser which properties will animate, enabling GPU acceleration
+
+## Examples
+
+### Basic Usage
+
+Automatic `will-change` management:
+
+```jsx
+import { motion, useWillChange } from "motion/react"
+
+function Card() {
+  const willChange = useWillChange()
+  
+  return (
+    <motion.div
+      style={{ willChange }}
+      whileHover={{ scale: 1.05, rotate: 2 }}
+      transition={{ duration: 0.2 }}
+    >
+      Hover me
+    </motion.div>
+  )
+}
+```
+
+### With Complex Animations
+
+Optimize complex animation sequences:
+
+```jsx
+import { motion, useWillChange } from "motion/react"
+
+function AnimatedPanel({ isOpen }) {
+  const willChange = useWillChange()
+  
+  return (
+    <motion.div
+      style={{ willChange }}
+      initial={{ x: -300, opacity: 0 }}
+      animate={{
+        x: isOpen ? 0 : -300,
+        opacity: isOpen ? 1 : 0,
+        scale: isOpen ? 1 : 0.8
+      }}
+      transition={{ type: "spring" }}
+    />
+  )
+}
+```
+
+### Multiple Animated Elements
+
+Each element gets its own `will-change` management:
+
+```jsx
+import { motion, useWillChange } from "motion/react"
+
+function AnimatedList({ items }) {
+  return (
+    <>
+      {items.map((item) => (
+        <ListItem key={item.id} item={item} />
+      ))}
+    </>
+  )
+}
+
+function ListItem({ item }) {
+  const willChange = useWillChange()
+  
+  return (
+    <motion.div
+      style={{ willChange }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+    >
+      {item.text}
+    </motion.div>
+  )
+}
+```
+
+### Manual Control
+
+Manually add properties to `will-change`:
+
+```jsx
+import { motion, useWillChange } from "motion/react"
+import { useEffect } from "react"
+
+function Component() {
+  const willChange = useWillChange()
+  
+  useEffect(() => {
+    // Manually hint that x will change
+    willChange.add("x")
+  }, [])
+  
+  return (
+    <motion.div
+      style={{ willChange }}
+      drag="x"
+      dragConstraints={{ left: 0, right: 300 }}
+    />
+  )
+}
+```
+
+## Performance Benefits
+
+<Note>
+  The `will-change` property hints to the browser that an element will animate, allowing it to prepare optimizations in advance. This is especially beneficial for transform and opacity animations.
+</Note>
+
+### Optimized Properties
+
+The following properties trigger `will-change: transform`:
+
+- Transform properties: `x`, `y`, `z`, `scale`, `rotate`, `skew`, etc.
+- Accelerated values: `opacity`
+
+### When to Use
+
+<AccordionGroup>
+  <Accordion title="Interactive elements">
+    Use `useWillChange()` on elements with hover, tap, or drag animations that users interact with frequently.
+  </Accordion>
+
+  <Accordion title="Layout animations">
+    Apply to elements that use layout animations or shared layout transitions for smoother performance.
+  </Accordion>
+
+  <Accordion title="Scroll-triggered animations">
+    Use on elements with scroll-triggered animations that change transform or opacity.
+  </Accordion>
+
+  <Accordion title="Avoid overuse">
+    Don't apply to every element. The `will-change` property consumes memory, so use it selectively on elements that actually animate.
+  </Accordion>
+</AccordionGroup>
+
+## API Details
+
+### add() Method
+
+Manually add a property to track for `will-change`:
+
+```typescript
+willChange.add(name: string): void
+```
+
+<ParamField path="name" type="string" required>
+  The name of the property to track (e.g., "x", "opacity", "scale")
+</ParamField>
+
+**Behavior:**
+- Only transform and accelerated properties trigger `will-change: transform`
+- Other properties are ignored
+- Once any tracked property is added, sets `will-change: transform`
+- When no tracked properties remain, resets to `will-change: auto`
+
+## Browser Support
+
+<Warning>
+  The `will-change` CSS property is supported in all modern browsers. For older browsers, it gracefully degrades and has no negative effect.
+</Warning>
+
+## Implementation Details
+
+- Extends `MotionValue<string>` class
+- Initializes with value `"auto"`
+- Tracks whether any accelerated properties are being animated
+- Automatically updates the value between `"transform"` and `"auto"`
+- Lightweight and designed for reuse across multiple elements
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="useMotionValue" href="/api/use-motion-value" icon="wave-pulse">
+    Create motion values
+  </Card>
+  <Card title="Performance Guide" href="/guides/performance" icon="gauge-high">
+    Optimize animations
+  </Card>
+  <Card title="MotionValue" href="/api/motion-value" icon="database">
+    MotionValue API reference
+  </Card>
+</CardGroup>

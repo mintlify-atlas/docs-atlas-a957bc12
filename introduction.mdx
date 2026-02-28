@@ -1,0 +1,106 @@
+---
+title: Introduction
+description: An open source animation library for JavaScript, React and Vue
+---
+
+# Motion
+
+Motion is a powerful, production-ready animation library that brings your interfaces to life with smooth, performant animations.
+
+<CardGroup cols={2}>
+  <Card title="Simple API" icon="code">
+    First-class React, JavaScript, and Vue packages with an intuitive, declarative API
+  </Card>
+  <Card title="Hybrid engine" icon="rocket">
+    Combines the power of JavaScript with native browser APIs for 120fps, GPU-accelerated animations
+  </Card>
+  <Card title="Production-ready" icon="check">
+    Written in TypeScript with extensive test coverage, tree-shakable exports, and a tiny footprint
+  </Card>
+  <Card title="Batteries included" icon="battery-full">
+    Gestures, springs, layout transitions, scroll-linked effects, and timelines built in
+  </Card>
+</CardGroup>
+
+## Why Motion?
+
+Motion is designed to make animation simple without sacrificing power or performance. Whether you're building interactive UI components, complex page transitions, or scroll-driven experiences, Motion provides the tools you need.
+
+### Built for developers
+
+Motion's API is designed to feel natural in your framework of choice. Animate with a single prop in React, or use the `animate()` function in vanilla JavaScript. The library handles the complexity of animation timing, interruption, and hardware acceleration for you.
+
+### Optimized for performance
+
+Motion's hybrid animation engine automatically uses the Web Animations API (WAAPI) for hardware-accelerated animations when possible, falling back to JavaScript animations when needed. This ensures smooth 60fps+ animations even on lower-end devices.
+
+### Framework support
+
+Motion provides dedicated packages for the most popular frameworks:
+
+<Tabs>
+  <Tab title="React">
+    ```jsx
+    import { motion } from "motion/react"
+
+    function Component() {
+        return <motion.div animate={{ x: 100 }} />
+    }
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```javascript
+    import { animate } from "motion"
+
+    animate("#box", { x: 100 })
+    ```
+  </Tab>
+  <Tab title="Vue">
+    ```vue
+    <script>
+        import { motion } from "motion-v"
+    </script>
+
+    <template>
+        <motion.div :animate="{ x: 100 }" />
+    </template>
+    ```
+  </Tab>
+</Tabs>
+
+## Features
+
+### Gestures
+
+Built-in support for drag, hover, tap, and pan gestures with configurable constraints and momentum.
+
+### Spring physics
+
+Realistic spring animations with full control over stiffness, damping, and mass parameters.
+
+### Layout animations
+
+Animate changes to your layout automatically, even when elements change size or position in the DOM.
+
+### Scroll effects
+
+Link animations to scroll position for parallax effects, progress indicators, and scroll-triggered animations.
+
+### Keyframe animations
+
+Define complex multi-step animations with full control over timing and easing.
+
+### Variants
+
+Orchestrate animations across multiple components with reusable animation definitions.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Install Motion in your project
+  </Card>
+  <Card title="Quickstart" icon="bolt" href="/quickstart">
+    Build your first animation in 5 minutes
+  </Card>
+</CardGroup>

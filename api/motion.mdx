@@ -1,0 +1,402 @@
+---
+title: motion
+description: Enhanced HTML and SVG elements with animation, gesture, and layout capabilities
+---
+
+The `motion` component is the core building block of Motion. It wraps any HTML or SVG element to add animation, gestures, drag, layout animations, and more.
+
+## Usage
+
+```jsx
+import { motion } from "motion/react"
+
+export function App() {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      Hello Motion
+    </motion.div>
+  )
+}
+```
+
+## HTML Elements
+
+`motion` components are available for all HTML elements:
+
+```jsx
+<motion.div />
+<motion.button />
+<motion.span />
+<motion.a />
+// ... any valid HTML element
+```
+
+## SVG Elements
+
+SVG elements are also supported:
+
+```jsx
+<motion.svg>
+  <motion.circle cx={50} cy={50} r={30} />
+  <motion.path d="M 0 0 L 100 100" />
+</motion.svg>
+```
+
+## Props
+
+All `motion` components accept standard HTML/SVG props plus the following animation props:
+
+### Animation
+
+<ParamField path="initial" type="object | string or false">
+  Properties or variant label to start from before animating to `animate`.
+  
+  Set to `false` to disable the mount animation.
+
+  ```jsx
+  // As values
+  <motion.div initial={{ opacity: 0 }} />
+
+  // As variant
+  <motion.div initial="hidden" variants={variants} />
+
+  // Multiple variants
+  <motion.div initial={["hidden", "inactive"]} variants={variants} />
+
+  // Disable mount animation
+  <motion.div initial={false} animate={{ opacity: 0 }} />
+  ```
+</ParamField>
+
+<ParamField path="animate" type="object | string or string[]">
+  Values to animate to. Can be an object of values, a variant label, or an array of variant labels.
+
+  ```jsx
+  // As values
+  <motion.div animate={{ opacity: 1, x: 100 }} />
+
+  // As variant
+  <motion.div animate="visible" variants={variants} />
+
+  // Multiple variants
+  <motion.div animate={["visible", "active"]} variants={variants} />
+  ```
+</ParamField>
+
+<ParamField path="exit" type="object | string or string[]">
+  Target to animate to when the component is removed from the tree.
+  
+  Must be used with `AnimatePresence`.
+
+  ```jsx
+  <AnimatePresence>
+    {isVisible && (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      />
+    )}
+  </AnimatePresence>
+  ```
+</ParamField>
+
+<ParamField path="variants" type="Variants">
+  Named animation states that can be referenced by `animate`, `initial`, and gesture props.
+
+  ```jsx
+  const variants = {
+    hidden: { opacity: 0 },
+    visible: { 
+      opacity: 1,
+      transition: { duration: 0.5 }
+    }
+  }
+
+  <motion.div
+    variants={variants}
+    initial="hidden"
+    animate="visible"
+  />
+  ```
+</ParamField>
+
+<ParamField path="transition" type="Transition">
+  Default transition for animations. If no transition is defined in `animate`, this will be used.
+
+  ```jsx
+  const spring = {
+    type: "spring",
+    damping: 10,
+    stiffness: 100
+  }
+
+  <motion.div transition={spring} animate={{ scale: 1.2 }} />
+  ```
+</ParamField>
+
+### Gestures
+
+<ParamField path="whileHover" type="object or string">
+  Properties or variant label to animate to while hovering.
+
+  ```jsx
+  <motion.div whileHover={{ scale: 1.2 }} />
+  ```
+</ParamField>
+
+<ParamField path="whileTap" type="object or string">
+  Properties or variant label to animate to while pressed.
+
+  ```jsx
+  <motion.div whileTap={{ scale: 0.95 }} />
+  ```
+</ParamField>
+
+<ParamField path="whileFocus" type="object or string">
+  Properties or variant label to animate to while focused.
+
+  ```jsx
+  <motion.input whileFocus={{ scale: 1.05 }} />
+  ```
+</ParamField>
+
+<ParamField path="whileDrag" type="object or string">
+  Properties or variant label to animate to while dragging.
+
+  ```jsx
+  <motion.div drag whileDrag={{ scale: 1.1 }} />
+  ```
+</ParamField>
+
+<ParamField path="whileInView" type="object or string">
+  Properties or variant label to animate to while in the viewport.
+
+  ```jsx
+  <motion.div 
+    whileInView={{ opacity: 1 }}
+    viewport={{ once: true }}
+  />
+  ```
+</ParamField>
+
+### Drag
+
+<ParamField path="drag" type="boolean | x or y">
+  Enable dragging. Set to `true` for both axes, or `"x"`/`"y"` for a single axis.
+
+  ```jsx
+  <motion.div drag="x" />
+  ```
+</ParamField>
+
+<ParamField path="dragConstraints" type="object or RefObject">
+  Constraints on dragging. Can be an object with `top`, `left`, `right`, `bottom` values, or a ref to another element.
+
+  ```jsx
+  <motion.div 
+    drag
+    dragConstraints={{ left: 0, right: 300, top: 0, bottom: 300 }}
+  />
+  ```
+</ParamField>
+
+<ParamField path="dragElastic" type="boolean or number">
+  Elasticity of drag constraints. `0` = no movement outside constraints, `1` = full movement. Default is `0.5`.
+
+  ```jsx
+  <motion.div drag dragElastic={0.2} />
+  ```
+</ParamField>
+
+<ParamField path="dragMomentum" type="boolean">
+  Apply momentum when drag ends. Default is `true`.
+
+  ```jsx
+  <motion.div drag dragMomentum={false} />
+  ```
+</ParamField>
+
+### Layout Animations
+
+<ParamField path="layout" type="boolean | position or size">
+  Enable layout animations when the component's layout changes.
+
+  ```jsx
+  <motion.div layout />
+  ```
+</ParamField>
+
+<ParamField path="layoutId" type="string">
+  A unique ID for shared layout animations. Components with the same `layoutId` will animate between each other.
+
+  ```jsx
+  {isSelected ? (
+    <motion.div layoutId="card" />
+  ) : (
+    <motion.div layoutId="card" />
+  )}
+  ```
+</ParamField>
+
+### Event Callbacks
+
+<ParamField path="onAnimationStart" type="(definition: AnimationDefinition) => void">
+  Callback when an animation defined in `animate` begins.
+
+  ```jsx
+  <motion.div 
+    animate={{ x: 100 }}
+    onAnimationStart={() => console.log('Animation started')}
+  />
+  ```
+</ParamField>
+
+<ParamField path="onAnimationComplete" type="(definition: AnimationDefinition) => void">
+  Callback when an animation defined in `animate` completes.
+
+  ```jsx
+  <motion.div 
+    animate={{ x: 100 }}
+    onAnimationComplete={() => console.log('Animation completed')}
+  />
+  ```
+</ParamField>
+
+<ParamField path="onUpdate" type="(latest: object) => void">
+  Callback with latest motion values, fired max once per frame.
+
+  ```jsx
+  <motion.div 
+    animate={{ x: 100, opacity: 0 }}
+    onUpdate={(latest) => console.log(latest.x, latest.opacity)}
+  />
+  ```
+</ParamField>
+
+<ParamField path="onHoverStart" type="(event: PointerEvent, info: EventInfo) => void">
+  Callback when pointer starts hovering.
+
+  ```jsx
+  <motion.div onHoverStart={() => console.log('Hover start')} />
+  ```
+</ParamField>
+
+<ParamField path="onHoverEnd" type="(event: PointerEvent, info: EventInfo) => void">
+  Callback when pointer stops hovering.
+
+  ```jsx
+  <motion.div onHoverEnd={() => console.log('Hover end')} />
+  ```
+</ParamField>
+
+<ParamField path="onTap" type="(event: MouseEvent | TouchEvent or PointerEvent, info: TapInfo) => void">
+  Callback when the tap gesture successfully ends.
+
+  ```jsx
+  <motion.div onTap={(event, info) => console.log(info.point)} />
+  ```
+</ParamField>
+
+<ParamField path="onTapStart" type="(event: MouseEvent | TouchEvent or PointerEvent, info: TapInfo) => void">
+  Callback when the tap gesture starts.
+
+  ```jsx
+  <motion.div onTapStart={(event, info) => console.log(info.point)} />
+  ```
+</ParamField>
+
+<ParamField path="onTapCancel" type="(event: MouseEvent | TouchEvent or PointerEvent, info: TapInfo) => void">
+  Callback when the tap gesture ends outside the element.
+
+  ```jsx
+  <motion.div onTapCancel={() => console.log('Tap cancelled')} />
+  ```
+</ParamField>
+
+<ParamField path="onDrag" type="(event: PointerEvent, info: PanInfo) => void">
+  Callback during drag. Called every frame during drag.
+
+  ```jsx
+  <motion.div 
+    drag
+    onDrag={(event, info) => console.log(info.offset)}
+  />
+  ```
+</ParamField>
+
+<ParamField path="onDragStart" type="(event: PointerEvent, info: PanInfo) => void">
+  Callback when dragging starts.
+
+  ```jsx
+  <motion.div drag onDragStart={() => console.log('Drag start')} />
+  ```
+</ParamField>
+
+<ParamField path="onDragEnd" type="(event: PointerEvent, info: PanInfo) => void">
+  Callback when dragging ends.
+
+  ```jsx
+  <motion.div drag onDragEnd={() => console.log('Drag end')} />
+  ```
+</ParamField>
+
+<ParamField path="onViewportEnter" type="(entry: IntersectionObserverEntry) => void">
+  Callback when the component enters the viewport.
+
+  ```jsx
+  <motion.div onViewportEnter={() => console.log('In view')} />
+  ```
+</ParamField>
+
+<ParamField path="onViewportLeave" type="(entry: IntersectionObserverEntry) => void">
+  Callback when the component leaves the viewport.
+
+  ```jsx
+  <motion.div onViewportLeave={() => console.log('Out of view')} />
+  ```
+</ParamField>
+
+### Style
+
+<ParamField path="style" type="MotionStyle">
+  Enhanced React style prop with support for `MotionValue`s and transform values.
+
+  ```jsx
+  const x = useMotionValue(0)
+
+  <motion.div 
+    style={{ 
+      x,
+      opacity: 1,
+      scale: 0.5,
+      rotate: 45
+    }} 
+  />
+  ```
+</ParamField>
+
+## TypeScript
+
+```typescript
+import { motion } from "motion/react"
+import type { HTMLMotionProps } from "motion/react"
+
+type Props = HTMLMotionProps<"div"> & {
+  customProp?: string
+}
+
+function Component({ customProp, ...props }: Props) {
+  return <motion.div {...props} />
+}
+```
+
+## Related
+
+- [AnimatePresence](/api/animate-presence) - Animate components when they're removed
+- [LayoutGroup](/api/layout-group) - Group related layout animations
+- [MotionConfig](/api/motion-config) - Configure default settings

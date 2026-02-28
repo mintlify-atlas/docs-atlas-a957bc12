@@ -1,0 +1,227 @@
+---
+title: JavaScript API Overview
+description: A powerful, vanilla JavaScript animation library with no framework dependencies
+---
+
+Motion's JavaScript API provides a complete animation toolkit that works with vanilla JavaScript, making it perfect for any web project without framework dependencies.
+
+## Core Functions
+
+The JavaScript API consists of five main functions:
+
+- **`animate()`** - Animate HTML elements, objects, or motion values
+- **`scroll()`** - Create scroll-linked animations
+- **`inView()`** - Detect when elements enter the viewport
+- **`timeline()`** - Create sequenced animations (via animate sequences)
+- **`animateMini()`** - Lightweight WAAPI-only animations
+
+## Installation
+
+```bash
+npm install motion
+```
+
+## Quick Start
+
+```javascript
+import { animate } from "motion"
+
+// Animate an element
+animate("#box", { x: 100, opacity: 1 })
+```
+
+## Animation Types
+
+### Element Animations
+
+Animate DOM elements using CSS selectors or element references:
+
+```javascript
+// Using selector
+animate(".box", { x: 100 })
+
+// Using element reference
+const element = document.querySelector(".box")
+animate(element, { x: 100 })
+
+// Animating multiple elements
+animate(".box", { x: 100 }) // All .box elements
+```
+
+### Motion Value Animations
+
+Animate raw numeric or string values:
+
+```javascript
+import { animate, motionValue } from "motion"
+
+const count = motionValue(0)
+count.on("change", (latest) => console.log(latest))
+
+animate(count, 100)
+```
+
+### Object Animations
+
+Animate arbitrary JavaScript objects:
+
+```javascript
+const data = { x: 0, y: 0 }
+
+animate(data, { x: 100, y: 50 }, {
+  onUpdate: () => console.log(data)
+})
+```
+
+## Animation Options
+
+### Duration and Easing
+
+```javascript
+animate(element, { x: 100 }, {
+  duration: 1,
+  ease: "easeInOut"
+})
+```
+
+### Spring Physics
+
+```javascript
+import { animate, spring } from "motion"
+
+animate(element, { x: 100 }, {
+  type: spring,
+  bounce: 0.25,
+  duration: 0.5
+})
+```
+
+### Delays and Stagger
+
+```javascript
+import { animate, stagger } from "motion"
+
+// Simple delay
+animate(element, { x: 100 }, { delay: 0.5 })
+
+// Stagger multiple elements
+animate(".box", { x: 100 }, {
+  delay: stagger(0.1)
+})
+```
+
+## Playback Controls
+
+All animations return controls for playback manipulation:
+
+```javascript
+const controls = animate(element, { x: 100 })
+
+// Playback control
+controls.play()
+controls.pause()
+controls.stop()
+controls.cancel()
+controls.complete()
+
+// Timing control
+controls.time = 0.5 // Jump to 0.5 seconds
+controls.speed = 2   // Double speed
+
+// Properties
+console.log(controls.duration)
+console.log(controls.state)
+```
+
+## Lifecycle Callbacks
+
+```javascript
+animate(element, { x: 100 }, {
+  onUpdate: (latest) => console.log(latest),
+  onPlay: () => console.log("Started"),
+  onComplete: () => console.log("Finished"),
+  onStop: () => console.log("Stopped")
+})
+```
+
+## Promises and Async
+
+Animations are Promise-compatible:
+
+```javascript
+await animate(element, { x: 100 })
+console.log("Animation complete")
+
+// Or using .then()
+animate(element, { x: 100 })
+  .then(() => console.log("Complete"))
+```
+
+## Animatable Properties
+
+### Transform Properties
+
+```javascript
+animate(element, {
+  x: 100,           // translateX
+  y: 50,            // translateY
+  scale: 1.5,       // scale
+  rotate: 45,       // rotate
+  scaleX: 2,
+  scaleY: 0.5,
+  skewX: 10,
+  skewY: 5
+})
+```
+
+### CSS Properties
+
+```javascript
+animate(element, {
+  opacity: 0.5,
+  backgroundColor: "#ff0000",
+  width: "100px",
+  borderRadius: "50%"
+})
+```
+
+### Transform Origin
+
+```javascript
+animate(element, {
+  rotate: 180,
+  transformOrigin: "top left"
+})
+```
+
+## Performance
+
+Motion automatically uses GPU-accelerated animations when possible:
+
+- Transform properties (`x`, `y`, `scale`, `rotate`) are GPU-accelerated
+- Other properties may use JavaScript or WAAPI depending on browser support
+- Animations are optimized for 60fps on most devices
+
+## Browser Support
+
+- Modern browsers (Chrome, Firefox, Safari, Edge)
+- Degrades gracefully in older browsers
+- Uses Web Animations API (WAAPI) when available
+- Falls back to JavaScript animations when needed
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="animate()" icon="play" href="/javascript/animate">
+    Learn about the animate function
+  </Card>
+  <Card title="scroll()" icon="scroll" href="/javascript/scroll">
+    Create scroll-linked animations
+  </Card>
+  <Card title="inView()" icon="eye" href="/javascript/inview">
+    Detect viewport visibility
+  </Card>
+  <Card title="timeline()" icon="timeline" href="/javascript/timeline">
+    Build sequenced animations
+  </Card>
+</CardGroup>

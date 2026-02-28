@@ -1,0 +1,462 @@
+---
+title: Layout Animations
+description: Automatic layout animations and shared element transitions
+---
+
+Motion can automatically animate layout changes when the size or position of an element changes, creating smooth transitions without manual calculation.
+
+## The `layout` Prop
+
+Add the `layout` prop to automatically animate layout changes:
+
+```jsx
+import { motion } from "motion"
+import { useState } from "react"
+
+function App() {
+  const [isExpanded, setIsExpanded] = useState(false)
+
+  return (
+    <motion.div
+      layout
+      onClick={() => setIsExpanded(!isExpanded)}
+      style={{
+        width: isExpanded ? 400 : 100,
+        height: isExpanded ? 400 : 100,
+        backgroundColor: "white",
+        borderRadius: isExpanded ? 0 : 50
+      }}
+      transition={{ duration: 0.5 }}
+    />
+  )
+}
+```
+
+## How It Works
+
+When `layout` is set, Motion:
+
+1. Measures the element before and after the layout change
+2. Calculates the difference
+3. Applies a transform to animate smoothly between states
+4. Corrects any visual distortions (like border-radius)
+
+This works for changes caused by:
+- CSS changes
+- Parent layout changes
+- Content changes
+- Window resizing
+
+## Layout Animations with Rotation
+
+Motion correctly handles rotation during layout animations:
+
+```jsx
+function RotatingBox() {
+  const [isOn, setIsOn] = useState(false)
+
+  return (
+    <motion.div
+      layout
+      initial={false}
+      transition={{ duration: 1 }}
+      style={{
+        width: isOn ? 400 : 100,
+        height: isOn ? 400 : 100,
+        backgroundColor: "white",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center"
+      }}
+      animate={{
+        rotate: isOn ? 45 : 10,
+        borderRadius: isOn ? 0 : 50
+      }}
+      onClick={() => setIsOn(!isOn)}
+    >
+      <motion.div
+        layout
+        initial={false}
+        transition={{ duration: 1 }}
+        style={{
+          width: isOn ? 100 : 50,
+          height: isOn ? 100 : 50,
+          backgroundColor: "red"
+        }}
+        animate={{
+          rotate: isOn ? 0 : 45,
+          borderRadius: isOn ? 20 : 0
+        }}
+      />
+    </motion.div>
+  )
+}
+```
+
+## Shared Layout Animations (layoutId)
+
+Create seamless transitions between different components using `layoutId`:
+
+```jsx
+function Tabs() {
+  const [selected, setSelected] = useState("home")
+
+  return (
+    <div style={{ display: "flex", gap: 8 }">
+      {["home", "search", "profile"].map((tab) => (
+        <div
+          key={tab}
+          onClick={() => setSelected(tab)}
+          style={{
+            position: "relative",
+            padding: 8,
+            cursor: "pointer"
+          }}
+        >
+          {selected === tab && (
+            <motion.div
+              layoutId="underline"
+              style={{
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: 2,
+                backgroundColor: "blue"
+              }}
+            />
+          )}
+          {tab}
+        </div>
+      ))}
+    </div>
+  )
+}
+```
+
+### Complex Shared Transitions
+
+LayoutId works even when elements change position dramatically:
+
+```jsx
+function DragTransfer() {
+  const [isLeft, setIsLeft] = useState(true)
+
+  return (
+    <div style={{ display: "flex", gap: 100 }">
+      <div style={{ width: 100, height: 100 }">
+        {isLeft && (
+          <motion.div
+            layoutId="box"
+            drag
+            onLayoutMeasure={(box) => {
+              // Detect drag to other side
+              if (box.x.min > 200) setIsLeft(false)
+            }}
+            style={{
+              width: 100,
+              height: 100,
+              backgroundColor: "white",
+              borderRadius: 20
+            }}
+          >
+            <motion.div
+              layoutId="dot"
+              style={{
+                width: 20,
+                height: 20,
+                backgroundColor: "#ff0088",
+                borderRadius: 10,
+                margin: "auto",
+                marginTop: 40
+              }}
+            />
+          </motion.div>
+        )}
+      </div>
+
+      <div style={{ width: 100, height: 100 }">
+        {!isLeft && (
+          <motion.div
+            layoutId="box"
+            drag
+            onLayoutMeasure={(box) => {
+              if (box.x.min < 200) setIsLeft(true)
+            }}
+            style={{
+              width: 100,
+              height: 100,
+              backgroundColor: "white",
+              borderRadius: 20
+            }}
+          >
+            <motion.div
+              layoutId="dot"
+              style={{
+                width: 20,
+                height: 20,
+                backgroundColor: "#ff0088",
+                borderRadius: 10,
+                margin: "auto",
+                marginTop: 40
+              }}
+            />
+          </motion.div>
+        )}
+      </div>
+    </div>
+  )
+}
+```
+
+## LayoutGroup
+
+Wrap multiple `layoutId` elements in a `LayoutGroup` to scope shared layouts:
+
+```jsx
+import { LayoutGroup, motion } from "motion"
+
+function Navigation() {
+  const [selected, setSelected] = useState("a")
+
+  return (
+    <nav style={{ display: "flex", gap: 16 }">
+      <LayoutGroup id={selected">
+        {["a", "b", "c"].map((item) => (
+          <div
+            key={item}
+            onClick={() => setSelected(item)}
+            style={{ position: "relative", padding: 16 }}
+          >
+            {selected === item && (
+              <motion.span
+                layoutId="highlight"
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  backgroundColor: "#0ea5e9"
+                }}
+                transition={{ duration: 0.3 }}
+              />
+            )}
+            <span style={{ position: "relative" }}>{item}</span>
+          </div>
+        ))}
+      </LayoutGroup>
+    </nav>
+  )
+}
+```
+
+### LayoutGroup Props
+
+```tsx
+interface LayoutGroupProps {
+  id?: string        // Unique identifier for this layout group
+  inherit?: boolean | "id"  // Inherit from parent LayoutGroup
+}
+```
+
+**Inheritance:**
+
+```jsx
+<LayoutGroup id="outer">
+  {/* This inherits the "outer" id */}
+  <LayoutGroup inherit>
+    <motion.div layoutId="item" />
+  </LayoutGroup>
+
+  {/* This creates "outer-inner" as id */}
+  <LayoutGroup id="inner" inherit="id">
+    <motion.div layoutId="item" />
+  </LayoutGroup>
+</LayoutGroup>
+```
+
+## Layout with AnimatePresence
+
+Combine `layout` with `AnimatePresence` for smooth list animations:
+
+```jsx
+function List({ items, onRemove }) {
+  return (
+    <AnimatePresence mode="popLayout">
+      {items.map(item => (
+        <motion.div
+          key={item.id}
+          layout
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.8 }}
+          style={{
+            padding: 16,
+            marginBottom: 8,
+            background: "white"
+          }}
+        >
+          {item.name}
+          <button onClick={() => onRemove(item.id)">
+            Remove
+          </button>
+        </motion.div>
+      ))}
+    </AnimatePresence>
+  )
+}
+```
+
+## Scale Correction
+
+Motion automatically corrects visual properties during scale-based layout animations:
+
+**Corrected properties:**
+- `borderRadius`
+- `boxShadow`
+- `transformOrigin`
+
+```jsx
+<motion.div
+  layout
+  style={{
+    borderRadius: 20,
+    boxShadow: "0 5px 15px rgba(0,0,0,0.3)"
+  }}
+>
+  {/* borderRadius and boxShadow stay visually consistent */}
+</motion.div>
+```
+
+## Layout Transitions
+
+Customize layout animation timing:
+
+```jsx
+<motion.div
+  layout
+  transition={{
+    layout: {
+      duration: 0.5,
+      ease: "easeInOut"
+    }
+  }}
+/>
+```
+
+Or use different transitions for layout vs other animations:
+
+```jsx
+<motion.div
+  layout
+  animate={{ backgroundColor: "#f00" }}
+  transition={{
+    layout: { duration: 0.3 },
+    backgroundColor: { duration: 1 }
+  }}
+/>
+```
+
+## Layout-specific Props
+
+### `layout="position"`
+
+Only animate position changes:
+
+```jsx
+<motion.div layout="position">
+  {/* Size changes won't animate */}
+</motion.div>
+```
+
+### `layout="size"`
+
+Only animate size changes:
+
+```jsx
+<motion.div layout="size">
+  {/* Position changes won't animate */}
+</motion.div>
+```
+
+### `onLayoutMeasure`
+
+Callback when layout is measured:
+
+```jsx
+<motion.div
+  layout
+  onLayoutMeasure={(box) => {
+    console.log("Layout box:", box)
+    // box.x.min, box.x.max, box.y.min, box.y.max
+  }}
+/>
+```
+
+## Performance
+
+Layout animations are performant because:
+
+1. **GPU-accelerated** - Uses transforms under the hood
+2. **Batched measurements** - Reads and writes are batched to prevent layout thrashing
+3. **Projection** - Uses a projection technique to avoid recalculating layout
+
+### Best Practices
+
+1. **Use `layout` sparingly** - Only on elements that need it
+2. **Avoid during scroll** - Can cause performance issues
+3. **Group related animations** - Use `LayoutGroup` to scope
+4. **Test on low-end devices** - Layout animations can be more intensive
+
+## Common Patterns
+
+### Accordion
+
+```jsx
+function Accordion({ items }) {
+  const [expanded, setExpanded] = useState(null)
+
+  return (
+    <div>
+      {items.map((item) => (
+        <motion.div key={item.id} layout>
+          <button onClick={() => setExpanded(
+            expanded === item.id ? null : item.id
+          )">
+            {item.title}
+          </button>
+          <AnimatePresence>
+            {expanded === item.id && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                {item.content}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      ))}
+    </div>
+  )
+}
+```
+
+### Grid Reorder
+
+```jsx
+function Grid({ items }) {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)" }">
+      {items.map((item) => (
+        <motion.div
+          key={item.id}
+          layout
+          transition={{ duration: 0.4 }}
+        >
+          {item.content}
+        </motion.div>
+      ))}
+    </div>
+  )
+}
+```

@@ -1,0 +1,291 @@
+---
+title: 'useScroll()'
+description: 'Hook for tracking scroll position and progress'
+icon: 'scroll'
+---
+
+## Overview
+
+`useScroll` returns motion values for scroll position and scroll progress. It can track the scroll of the viewport or a container element.
+
+## Import
+
+```tsx
+import { useScroll } from 'framer-motion'
+```
+
+## Signature
+
+```tsx
+function useScroll(options?: UseScrollOptions): ScrollMotionValues
+
+interface UseScrollOptions {
+  container?: RefObject<HTMLElement>
+  target?: RefObject<HTMLElement>
+  axis?: "x" | "y"
+  offset?: ScrollOffset
+  trackContentSize?: boolean
+}
+
+interface ScrollMotionValues {
+  scrollX: MotionValue<number>
+  scrollY: MotionValue<number>
+  scrollXProgress: MotionValue<number>
+  scrollYProgress: MotionValue<number>
+}
+```
+
+## Parameters
+
+### container
+
+A ref to the scrollable container element. If not provided, tracks the window scroll.
+
+```tsx
+container?: RefObject<HTMLElement>
+```
+
+```jsx
+const containerRef = useRef(null)
+const { scrollYProgress } = useScroll({ container: containerRef })
+
+return (
+  <div ref={containerRef} style={{ height: '400px', overflow: 'auto' }">
+    {/* content */}
+  </div>
+)
+```
+
+### target
+
+A ref to the target element to track. When provided, the scroll progress is measured relative to this element's position in the viewport.
+
+```tsx
+target?: RefObject<HTMLElement>
+```
+
+```jsx
+const targetRef = useRef(null)
+const { scrollYProgress } = useScroll({ target: targetRef })
+
+return (
+  <div ref={targetRef">
+    {/* This element's scroll position is tracked */}
+  </div>
+)
+```
+
+### axis
+
+The scroll axis to track.
+
+```tsx
+axis?: "x" | "y" // default: "y"
+```
+
+```jsx
+const { scrollXProgress } = useScroll({ axis: "x" })
+```
+
+### offset
+
+Define custom scroll offsets for when the animation starts and ends.
+
+```tsx
+type ScrollOffset = Array<Edge | Intersection | ProgressIntersection>
+
+type Edge = string | number
+type Intersection = `${Edge} ${Edge}`
+type ProgressIntersection = [number, number]
+
+// Edge units: "px", "vw", "vh", "%"
+// Named edges: "start", "end", "center"
+```
+
+```jsx
+// Start when target top hits viewport center,
+// end when target bottom hits viewport center
+const { scrollYProgress } = useScroll({
+  target: targetRef,
+  offset: ["start center", "end center"]
+})
+
+// Use pixel values
+const { scrollYProgress } = useScroll({
+  target: targetRef,
+  offset: ["0px", "300px"]
+})
+
+// Use progress values (0-1)
+const { scrollYProgress } = useScroll({
+  target: targetRef,
+  offset: [[0, 0.2], [0.8, 1]]
+})
+```
+
+### trackContentSize
+
+Enable per-frame checking of scroll content size changes.
+
+```tsx
+trackContentSize?: boolean // default: false
+```
+
+```jsx
+const { scrollYProgress } = useScroll({
+  container: containerRef,
+  trackContentSize: true
+})
+```
+
+## Return Values
+
+### scrollX
+
+Current horizontal scroll position in pixels.
+
+```tsx
+scrollX: MotionValue<number>
+```
+
+### scrollY
+
+Current vertical scroll position in pixels.
+
+```tsx
+scrollY: MotionValue<number>
+```
+
+### scrollXProgress
+
+Horizontal scroll progress from 0 to 1.
+
+```tsx
+scrollXProgress: MotionValue<number>
+```
+
+### scrollYProgress
+
+Vertical scroll progress from 0 to 1.
+
+```tsx
+scrollYProgress: MotionValue<number>
+```
+
+## Examples
+
+### Track window scroll
+
+```jsx
+import { useScroll, motion, useTransform } from 'framer-motion'
+
+function Component() {
+  const { scrollYProgress } = useScroll()
+  const opacity = useTransform(scrollYProgress, [0, 1], [1, 0])
+
+  return (
+    <motion.div style={{ opacity }">
+      Fades out on scroll
+    </motion.div>
+  )
+}
+```
+
+### Scroll progress indicator
+
+```jsx
+function ScrollProgress() {
+  const { scrollYProgress } = useScroll()
+
+  return (
+    <motion.div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: '4px',
+        backgroundColor: '#007bff',
+        scaleX: scrollYProgress,
+        transformOrigin: '0%'
+      }}
+    />
+  )
+}
+```
+
+### Track element scroll position
+
+```jsx
+function ScrollSection() {
+  const targetRef = useRef(null)
+  const { scrollYProgress } = useScroll({
+    target: targetRef,
+    offset: ["start end", "end start"]
+  })
+
+  const opacity = useTransform(scrollYProgress, [0, 0.5, 1], [0, 1, 0])
+  const scale = useTransform(scrollYProgress, [0, 0.5, 1], [0.8, 1, 0.8])
+
+  return (
+    <motion.section
+      ref={targetRef}
+      style={{ opacity, scale }}
+    >
+      Animated based on scroll position
+    </motion.section>
+  )
+}
+```
+
+### Container scroll tracking
+
+```jsx
+function ScrollContainer() {
+  const containerRef = useRef(null)
+  const { scrollYProgress } = useScroll({ container: containerRef })
+
+  return (
+    <div>
+      <motion.div
+        style={{
+          scaleX: scrollYProgress,
+          position: 'sticky',
+          top: 0,
+          height: '4px',
+          backgroundColor: '#007bff',
+          transformOrigin: '0%'
+        }}
+      />
+      <div
+        ref={containerRef}
+        style={{ height: '400px', overflow: 'auto' }}
+      >
+        {/* Scrollable content */}
+      </div>
+    </div>
+  )
+}
+```
+
+### Parallax effect
+
+```jsx
+function ParallaxSection() {
+  const ref = useRef(null)
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"]
+  })
+
+  const y = useTransform(scrollYProgress, [0, 1], ["-20%", "20%"])
+
+  return (
+    <section ref={ref} style={{ position: 'relative', height: '100vh' }">
+      <motion.div style={{ y }">
+        Parallax content
+      </motion.div>
+    </section>
+  )
+}
+```

@@ -1,0 +1,511 @@
+---
+title: Performance
+description: Optimize animations for 60fps on all devices
+---
+
+Motion is designed for performance, but following best practices ensures smooth 60fps animations even on low-end devices.
+
+## GPU-Accelerated Properties
+
+Animate these properties for hardware acceleration:
+
+```jsx
+// ✅ GPU-accelerated (use these)
+<motion.div
+  animate={{
+    x: 100,              // transform: translateX
+    y: 100,              // transform: translateY
+    scale: 1.5,          // transform: scale
+    rotate: 45,          // transform: rotate
+    opacity: 0.5         // opacity
+  }}
+/>
+
+// ❌ Not GPU-accelerated (avoid)
+<motion.div
+  animate={{
+    width: 200,          // Triggers layout
+    height: 200,         // Triggers layout
+    top: 100,            // Triggers layout
+    left: 100,           // Triggers layout
+    margin: 20           // Triggers layout
+  }}
+/>
+```
+
+From `accelerated-values.ts:4-12`, Motion identifies GPU-accelerated properties:
+
+```typescript
+export const acceleratedValues = new Set<string>([
+  "opacity",
+  "clipPath",
+  "filter",
+  "transform",
+  // background-color disabled until browser support improves
+])
+```
+
+## will-change Optimization
+
+Motion automatically adds `will-change` for animated properties. From `add-will-change.ts:5-23`:
+
+```typescript
+export function addValueToWillChange(
+  visualElement: VisualElement,
+  key: string
+) {
+  const willChange = visualElement.getValue("willChange")
+  
+  if (isWillChangeMotionValue(willChange)) {
+    return willChange.add(key)
+  } else if (!willChange && MotionGlobalConfig.WillChange) {
+    const newWillChange = new MotionGlobalConfig.WillChange("auto")
+    visualElement.addValue("willChange", newWillChange)
+    newWillChange.add(key)
+  }
+}
+```
+
+This hints to the browser which properties will animate, enabling optimizations.
+
+## Transform vs Layout Properties
+
+Use transforms instead of layout properties:
+
+```jsx
+// ❌ Animates layout (expensive)
+<motion.div
+  animate={{ 
+    width: isOpen ? 400 : 100,
+    left: isOpen ? 100 : 0
+  }}
+/>
+
+// ✅ Animates transform (cheap)
+<motion.div
+  animate={{
+    scale: isOpen ? 4 : 1,
+    x: isOpen ? 100 : 0
+  }}
+  style={{
+    width: 100,  // Static size
+    transformOrigin: "0% 0%"  // Control scale origin
+  }}
+/>
+```
+
+## Layout Animations
+
+For necessary layout changes, use the `layout` prop for optimized FLIP animations:
+
+```jsx
+// ✅ Optimized layout animation
+<motion.div
+  layout
+  style={{
+    width: isOpen ? 400 : 100,
+    height: isOpen ? 300 : 100
+  }}
+  transition={{ layout: { duration: 0.3 } }}
+/>
+```
+
+Motion converts layout changes to transform-based animations under the hood.
+
+## Reduce Motion Values
+
+Minimize the number of animated properties:
+
+```jsx
+// ❌ Animating many properties
+<motion.div
+  animate={{
+    x: 100,
+    y: 100,
+    scale: 1.5,
+    rotate: 45,
+    opacity: 0.8,
+    filter: "blur(4px)",
+    backgroundColor: "#ff0080"
+  }}
+/>
+
+// ✅ Animate only what's needed
+<motion.div
+  animate={{
+    x: 100,
+    opacity: 0.8
+  }}
+/>
+```
+
+## Spring Physics Cost
+
+Spring calculations are CPU-intensive. Use duration-based animations for many simultaneous elements:
+
+```jsx
+// For many elements animating at once
+const manyElements = items.map((item, i) => (
+  <motion.div
+    key={i}
+    animate={{ x: 100 }}
+    transition={{ 
+      duration: 0.3,  // ✅ Cheaper than spring
+      ease: "easeOut"
+    }}
+  />
+))
+
+// For hero animations or single elements
+<motion.div
+  animate={{ x: 100 }}
+  transition={{ 
+    type: "spring",  // ✅ Fine for single element
+    stiffness: 300
+  }}
+/>
+```
+
+## Scroll Performance
+
+Limit scroll-linked animations:
+
+```jsx
+// ❌ Too many scroll-linked elements
+{items.map((item, i) => (
+  <motion.div
+    key={i}
+    style={{ y: useTransform(scrollY, [0, 1000], [0, -100]) }}
+  />
+))}
+
+// ✅ Limit to ~10-20 elements
+<motion.div
+  style={{ y: useTransform(scrollY, [0, 1000], [0, -100]) }}
+>
+  {/* Static children */}
+</motion.div>
+```
+
+Use native `ScrollTimeline` API when possible:
+
+```jsx
+import { useScroll } from "motion/react"
+
+const { scrollYProgress } = useScroll()
+// Automatically uses native API when available
+```
+
+## Reduce Rendering
+
+Prevent unnecessary re-renders:
+
+```jsx
+// ❌ Creates new object every render
+<motion.div
+  animate={{ x: 100, opacity: 1 }}
+  transition={{ duration: 0.3 }}
+/>
+
+// ✅ Memoize static objects
+const animateConfig = { x: 100, opacity: 1 }
+const transitionConfig = { duration: 0.3 }
+
+<motion.div
+  animate={animateConfig}
+  transition={transitionConfig}
+/>
+
+// ✅ Or use variants
+const variants = {
+  visible: { x: 100, opacity: 1 }
+}
+
+<motion.div
+  variants={variants}
+  animate="visible"
+/>
+```
+
+## Lazy Loading
+
+Load Motion features on-demand:
+
+```jsx
+import { LazyMotion, domAnimation, m } from "motion/react"
+
+// Load only essential features
+<LazyMotion features={domAnimation">
+  <m.div animate={{ x: 100 }} />
+</LazyMotion>
+```
+
+Bundle sizes:
+- Full Motion: ~35kb gzip
+- LazyMotion (domAnimation): ~15kb gzip
+- LazyMotion (domMax): ~25kb gzip
+
+## Reduced Motion
+
+Respect user preferences. From `reduced-motion/index.ts:9-21`:
+
+```typescript
+export function initPrefersReducedMotion() {
+  hasReducedMotionListener.current = true
+  if (!isBrowser) return
+  
+  if (window.matchMedia) {
+    const motionMediaQuery = window.matchMedia("(prefers-reduced-motion)")
+    
+    const setReducedMotionPreferences = () =>
+      (prefersReducedMotion.current = motionMediaQuery.matches)
+    
+    motionMediaQuery.addEventListener("change", setReducedMotionPreferences)
+    setReducedMotionPreferences()
+  }
+}
+```
+
+Implement reduced motion:
+
+```jsx
+import { motion, useReducedMotion } from "motion/react"
+
+export function AccessibleAnimation() {
+  const shouldReduceMotion = useReducedMotion()
+  
+  return (
+    <motion.div
+      animate={{ 
+        x: 100,
+        opacity: 1
+      }}
+      transition={{
+        duration: shouldReduceMotion ? 0 : 0.3,
+        ease: shouldReduceMotion ? "linear" : "easeOut"
+      }}
+    />
+  )
+}
+```
+
+Or disable animations entirely:
+
+```jsx
+import { MotionConfig } from "motion/react"
+
+const shouldReduceMotion = useReducedMotion()
+
+<MotionConfig reducedMotion={shouldReduceMotion ? "always" : "never"">
+  <App />
+</MotionConfig>
+```
+
+## Batching Updates
+
+Motion automatically batches DOM writes. From drag controls:
+
+```typescript
+this.visualElement.render()
+```
+
+This queues a single render, even if multiple values change.
+
+## Measuring Performance
+
+Profile animations in Chrome DevTools:
+
+1. Open DevTools → Performance tab
+2. Enable "Screenshots" and "Memory"
+3. Record while animating
+4. Look for:
+   - **Frame rate** - Should stay above 60fps
+   - **Long tasks** - Yellow bars over 50ms
+   - **Layout thrashing** - Purple "Layout" bars
+
+## Common Issues
+
+### Animation Stuttering
+
+**Symptoms**: Choppy animations, dropped frames
+
+**Solutions**:
+
+1. Use GPU-accelerated properties only:
+   ```jsx
+   // ❌ Causes layout
+   animate={{ width: 200 }}
+   
+   // ✅ GPU-accelerated
+   animate={{ scale: 2 }}
+   ```
+
+2. Reduce simultaneous animations:
+   ```jsx
+   // ❌ 100 springs at once
+   {items.map(item => <motion.div animate={{ x: 100 }} />)}
+   
+   // ✅ Stagger with duration-based
+   {items.map((item, i) => (
+     <motion.div 
+       animate={{ x: 100 }}
+       transition={{ delay: i * 0.05, duration: 0.3 }}
+     />
+   ))}
+   ```
+
+3. Check for layout thrashing:
+   ```jsx
+   // ❌ Causes forced layouts
+   animate={{ height: element.scrollHeight }}
+   
+   // ✅ Pre-measure
+   const height = useMemo(() => element.scrollHeight, [element])
+   animate={{ height }}
+   ```
+
+### Memory Leaks
+
+**Symptoms**: Increasing memory usage, slow over time
+
+**Solutions**:
+
+1. Clean up event listeners:
+   ```jsx
+   useEffect(() => {
+     const controls = animationControls.start()
+     return () => controls.stop()
+   }, [])
+   ```
+
+2. Cancel scroll listeners:
+   ```jsx
+   useEffect(() => {
+     const unsubscribe = scrollY.on("change", callback)
+     return unsubscribe
+   }, [])
+   ```
+
+## Production Checklist
+
+<Steps>
+  <Step title="Use GPU properties">
+    Animate `x`, `y`, `scale`, `rotate`, `opacity` instead of layout properties
+  </Step>
+  
+  <Step title="Limit animations">
+    Keep simultaneous animations under 50 elements
+  </Step>
+  
+  <Step title="Add reduced motion">
+    Implement `useReducedMotion()` for accessibility
+  </Step>
+  
+  <Step title="Profile on low-end devices">
+    Test on older phones/tablets, not just desktop
+  </Step>
+  
+  <Step title="Use LazyMotion">
+    Load only needed features to reduce bundle size
+  </Step>
+  
+  <Step title="Avoid layout thrashing">
+    Don't read and write layout in the same frame
+  </Step>
+</Steps>
+
+## Performance Patterns
+
+### Staggered List
+
+```jsx
+import { motion } from "motion/react"
+
+const container = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+}
+
+const item = {
+  hidden: { opacity: 0, y: 20 },
+  show: { 
+    opacity: 1, 
+    y: 0,
+    transition: { duration: 0.3 }  // Duration-based for many items
+  }
+}
+
+<motion.ul
+  variants={container}
+  initial="hidden"
+  animate="show"
+>
+  {items.map(item => (
+    <motion.li key={item.id} variants={item">
+      {item.name}
+    </motion.li>
+  ))}
+</motion.ul>
+```
+
+### Infinite Scroll
+
+```jsx
+import { motion, useScroll, useTransform } from "motion/react"
+
+export function OptimizedInfiniteScroll() {
+  const { scrollY } = useScroll()
+  
+  // Only transform visible elements
+  const y = useTransform(scrollY, [0, 1000], [0, -200])
+  
+  return (
+    <motion.div 
+      style={{ y }}
+      // Use CSS transforms, not layout properties
+    >
+      {/* Content */}
+    </motion.div>
+  )
+}
+```
+
+## Tips
+
+<Tip>
+  **Profile early** - Test performance on target devices early in development.
+</Tip>
+
+<Tip>
+  **Start simple** - Begin with duration-based animations, upgrade to springs only where needed.
+</Tip>
+
+<Tip>
+  **Measure, don't guess** - Use Chrome DevTools to identify actual bottlenecks.
+</Tip>
+
+<Warning>
+  **Mobile is the constraint** - If it runs smoothly on low-end mobile, it'll fly on desktop.
+</Warning>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Accessibility" icon="universal-access" href="/guides/accessibility">
+    Make animations accessible
+  </Card>
+  <Card title="Spring Animations" icon="wave-pulse" href="/guides/spring-animations">
+    Understand spring performance
+  </Card>
+  <Card title="Scroll Animations" icon="arrows-up-down" href="/guides/scroll-animations">
+    Optimize scroll-linked animations
+  </Card>
+  <Card title="Layout Transitions" icon="arrows-maximize" href="/guides/layout-transitions">
+    FLIP technique for layout
+  </Card>
+</CardGroup>

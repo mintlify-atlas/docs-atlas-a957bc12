@@ -1,0 +1,143 @@
+---
+title: 'Hover'
+description: 'Hover gesture props and event handlers'
+icon: 'cursor'
+---
+
+## Overview
+
+The hover gesture detects when a pointer hovers over an element. It provides event callbacks and animation states for hover interactions.
+
+## Props
+
+### whileHover
+
+Properties or variant label to animate to while the hover gesture is recognized.
+
+```tsx
+type whileHover = VariantLabels | TargetAndTransition
+
+type VariantLabels = string | string[]
+
+type TargetAndTransition = {
+  [key: string]: any
+  transition?: Transition
+  transitionEnd?: ResolvedValues
+}
+```
+
+```jsx
+<motion.div whileHover={{ scale: 1.2 }} />
+```
+
+```jsx
+// With variants
+const variants = {
+  hover: {
+    scale: 1.1,
+    backgroundColor: "#f0f0f0"
+  }
+}
+
+<motion.div
+  variants={variants}
+  whileHover="hover"
+/>
+```
+
+## Event Handlers
+
+### onHoverStart
+
+Callback when pointer starts hovering over the component.
+
+```tsx
+type onHoverStart = (
+  event: PointerEvent,
+  info: EventInfo
+) => void
+
+interface EventInfo {
+  point: { x: number; y: number }
+}
+```
+
+```jsx
+<motion.div
+  onHoverStart={(event, info) => {
+    console.log('Hover starts at', info.point)
+  }}
+/>
+```
+
+### onHoverEnd
+
+Callback when pointer stops hovering over the component.
+
+```tsx
+type onHoverEnd = (
+  event: PointerEvent,
+  info: EventInfo
+) => void
+```
+
+```jsx
+<motion.div
+  onHoverEnd={(event, info) => {
+    console.log('Hover ends at', info.point)
+  }}
+/>
+```
+
+## Examples
+
+### Basic hover animation
+
+```jsx
+<motion.button
+  whileHover={{ scale: 1.1 }}
+  onHoverStart={() => console.log('Button hovered')}
+  onHoverEnd={() => console.log('Hover ended')}
+>
+  Hover me
+</motion.button>
+```
+
+### Hover with transition
+
+```jsx
+<motion.div
+  whileHover={{
+    scale: 1.2,
+    transition: { duration: 0.3 }
+  }}
+>
+  Hover with custom transition
+</motion.div>
+```
+
+### Multiple hover states
+
+```jsx
+const variants = {
+  initial: {
+    scale: 1,
+    backgroundColor: "#fff"
+  },
+  hover: {
+    scale: 1.05,
+    backgroundColor: "#f8f8f8",
+    transition: {
+      duration: 0.2
+    }
+  }
+}
+
+<motion.div
+  variants={variants}
+  initial="initial"
+  whileHover="hover"
+>
+  Card with hover effect
+</motion.div>
+```

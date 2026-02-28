@@ -1,0 +1,381 @@
+---
+title: MotionValue
+description: Track the state and velocity of animated values
+---
+
+## Overview
+
+`MotionValue` is a class used to track the state and velocity of motion values. It exists outside of React's render cycle, making it efficient for high-frequency updates like animations and gestures.
+
+## Import
+
+```jsx
+import { motionValue } from "motion-dom"
+// or
+import { useMotionValue } from "motion/react"
+```
+
+## Constructor
+
+```typescript
+class MotionValue<V = any> {
+  constructor(init: V, options?: MotionValueOptions)
+}
+
+function motionValue<V>(init: V, options?: MotionValueOptions): MotionValue<V>
+```
+
+### Parameters
+
+<ParamField path="init" type="V" required>
+  The initial value
+</ParamField>
+
+<ParamField path="options" type="MotionValueOptions">
+  Optional configuration:
+  - `owner`: Internal owner reference (used by Motion components)
+</ParamField>
+
+## Methods
+
+### get()
+
+Returns the latest state of the `MotionValue`.
+
+```typescript
+get(): V
+```
+
+**Example:**
+
+```jsx
+const x = motionValue(0)
+console.log(x.get()) // 0
+```
+
+### set()
+
+Sets the state of the `MotionValue`.
+
+```typescript
+set(v: V): void
+```
+
+**Parameters:**
+
+<ParamField path="v" type="V" required>
+  The new value to set
+</ParamField>
+
+**Example:**
+
+```jsx
+const x = motionValue(0)
+x.set(100)
+```
+
+### jump()
+
+Set the state of the `MotionValue`, stopping any active animations, effects, and resetting velocity to `0`.
+
+```typescript
+jump(v: V, endAnimation?: boolean): void
+```
+
+**Parameters:**
+
+<ParamField path="v" type="V" required>
+  The new value to set
+</ParamField>
+
+<ParamField path="endAnimation" type="boolean" default="true">
+  Whether to stop active animations
+</ParamField>
+
+**Example:**
+
+```jsx
+const x = motionValue(0)
+x.jump(100) // Immediately jumps to 100, stops animations
+```
+
+### on()
+
+Subscribe to `MotionValue` events.
+
+```typescript
+on<EventName extends keyof MotionValueEventCallbacks<V>>(
+  eventName: EventName,
+  callback: MotionValueEventCallbacks<V>[EventName]
+): () => void
+```
+
+**Events:**
+
+- `"change"`: Fired when the value changes
+- `"animationStart"`: Fired when an animation starts
+- `"animationComplete"`: Fired when an animation completes
+- `"animationCancel"`: Fired when an animation is cancelled
+- `"destroy"`: Fired when the MotionValue is destroyed
+
+**Returns:** Unsubscribe function
+
+**Example:**
+
+```jsx
+const x = motionValue(0)
+
+const unsubscribe = x.on("change", (latest) => {
+  console.log("x changed to", latest)
+})
+
+// Later...
+unsubscribe()
+```
+
+**React Usage:**
+
+```jsx
+import { useEffect } from "react"
+import { useMotionValue } from "motion/react"
+
+export function Component() {
+  const x = useMotionValue(0)
+
+  useEffect(() => {
+    return x.on("change", (latest) => {
+      console.log("x:", latest)
+    })
+  }, [])
+
+  return <motion.div style={{ x }} />
+}
+```
+
+### getPrevious()
+
+Returns the previous state of the `MotionValue`.
+
+```typescript
+getPrevious(): V | undefined
+```
+
+**Example:**
+
+```jsx
+const x = motionValue(0)
+x.set(100)
+console.log(x.getPrevious()) // 0
+```
+
+### getVelocity()
+
+Returns the latest velocity of the `MotionValue`. Returns `0` if the state is non-numerical.
+
+```typescript
+getVelocity(): number
+```
+
+**Example:**
+
+```jsx
+const x = motionValue(0)
+animate(x, 100)
+console.log(x.getVelocity()) // e.g., 250 (pixels per second)
+```
+
+### isAnimating()
+
+Returns `true` if this value is currently animating.
+
+```typescript
+isAnimating(): boolean
+```
+
+**Example:**
+
+```jsx
+const x = motionValue(0)
+animate(x, 100)
+console.log(x.isAnimating()) // true
+```
+
+### stop()
+
+Stop the currently active animation.
+
+```typescript
+stop(): void
+```
+
+**Example:**
+
+```jsx
+const x = motionValue(0)
+const animation = animate(x, 100, { duration: 2 })
+
+// Stop after 1 second
+setTimeout(() => x.stop(), 1000)
+```
+
+### destroy()
+
+Destroy and clean up subscribers to this `MotionValue`.
+
+```typescript
+destroy(): void
+```
+
+**Example:**
+
+```jsx
+const x = motionValue(0)
+// ... use the value
+x.destroy()
+```
+
+**Note:** The `useMotionValue` hook automatically handles cleanup. Only call `destroy()` if you manually created a `MotionValue` via the `motionValue` function.
+
+## Properties
+
+### updatedAt
+
+The time the `MotionValue` was last updated (in milliseconds).
+
+```typescript
+updatedAt: number
+```
+
+## Usage
+
+### Creating Motion Values
+
+**In React:**
+
+```jsx
+import { useMotionValue } from "motion/react"
+
+const x = useMotionValue(0)
+```
+
+**In Vanilla JS:**
+
+```jsx
+import { motionValue } from "motion-dom"
+
+const x = motionValue(0)
+```
+
+### Subscribing to Changes
+
+Listen for value updates:
+
+```jsx
+const x = motionValue(0)
+
+const unsubscribe = x.on("change", (latest) => {
+  console.log("Value:", latest)
+})
+
+x.set(100) // Logs: "Value: 100"
+
+unsubscribe()
+```
+
+### Animation Events
+
+Track animation lifecycle:
+
+```jsx
+import { motionValue, animate } from "motion-dom"
+
+const x = motionValue(0)
+
+x.on("animationStart", () => console.log("Started"))
+x.on("animationComplete", () => console.log("Completed"))
+x.on("animationCancel", () => console.log("Cancelled"))
+
+animate(x, 100)
+```
+
+### Manual Velocity Control
+
+Set velocity explicitly:
+
+```jsx
+const x = motionValue(0)
+
+// Set with velocity
+x.setWithVelocity(0, 100, 16.67) // prev, current, delta (ms)
+```
+
+### Stopping Animations
+
+```jsx
+const x = motionValue(0)
+animate(x, 100, { duration: 2 })
+
+if (x.isAnimating()) {
+  x.stop()
+}
+```
+
+### Jumping to Values
+
+Instantly set a value without animation:
+
+```jsx
+const x = motionValue(0)
+animate(x, 100) // Start animation
+x.jump(50) // Immediately jump to 50, cancel animation
+```
+
+## Lifecycle
+
+### Automatic Cleanup (React)
+
+When using `useMotionValue`, cleanup is automatic:
+
+```jsx
+function Component() {
+  const x = useMotionValue(0)
+  // No cleanup needed - handled automatically
+  return <motion.div style={{ x }} />
+}
+```
+
+### Manual Cleanup (Vanilla JS)
+
+When creating values manually, clean up when done:
+
+```jsx
+const x = motionValue(0)
+
+// ... use the value
+
+// When finished:
+x.destroy()
+```
+
+## Performance
+
+- Motion values exist outside React's render cycle
+- Updates don't trigger component re-renders
+- Velocity is tracked automatically for numerical values
+- Listeners are efficiently managed and cleaned up
+
+## Notes
+
+- Motion values can hold any type of value (numbers, strings, colors, etc.)
+- Velocity tracking only works for numerical values
+- When all `"change"` listeners are removed, active animations are automatically stopped
+- Motion values maintain a dependency graph for transformed values
+- Maximum velocity delta is 30ms - older updates return velocity of `0`
+
+## Related
+
+- [useMotionValue](/api/use-motion-value) - React hook for creating motion values
+- [useTransform](/api/use-transform) - Transform motion values
+- [useSpring](/api/use-spring) - Add spring physics
+- [useVelocity](/api/use-velocity) - Track velocity
+- [animate](/api/animate) - Animate motion values

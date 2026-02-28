@@ -1,0 +1,283 @@
+---
+title: LayoutGroup
+description: Coordinate layout animations across multiple components
+---
+
+The `LayoutGroup` component enables coordinated layout animations between multiple `motion` components. It's particularly useful for shared layout animations where components animate between different positions in the tree.
+
+## Usage
+
+```jsx
+import { motion, LayoutGroup } from "motion/react"
+import { useState } from "react"
+
+export function App() {
+  const [selected, setSelected] = useState(0)
+
+  return (
+    <LayoutGroup>
+      {items.map((item, i) => (
+        <motion.div
+          key={item.id}
+          layout
+          onClick={() => setSelected(i)}
+        >
+          {item.name}
+          {selected === i && (
+            <motion.div layoutId="selected" />
+          )}
+        </motion.div>
+      ))}
+    </LayoutGroup>
+  )
+}
+```
+
+## Props
+
+<ParamField path="children" type="ReactNode">
+  React children. Any `motion` components with `layout` or `layoutId` props will be coordinated.
+
+  ```jsx
+  <LayoutGroup>
+    <motion.div layout />
+    <motion.div layout />
+  </LayoutGroup>
+  ```
+</ParamField>
+
+<ParamField path="id" type="string">
+  A unique ID for this layout group. Useful when nesting layout groups.
+
+  ```jsx
+  <LayoutGroup id="outer">
+    <motion.div layout />
+    <LayoutGroup id="inner">
+      <motion.div layout />
+    </LayoutGroup>
+  </LayoutGroup>
+  ```
+</ParamField>
+
+<ParamField path="inherit" type="boolean or id" default="true">
+  Controls whether this layout group inherits from parent layout groups:
+  
+  - `true`: Inherit both the group and ID (default)
+  - `false`: Create an isolated layout group
+  - `"id"`: Only inherit the ID, not the group
+
+  ```jsx
+  // Create isolated layout group
+  <LayoutGroup inherit={false">
+    <motion.div layout />
+  </LayoutGroup>
+
+  // Inherit only ID
+  <LayoutGroup id="parent">
+    <LayoutGroup id="child" inherit="id">
+      {/* ID will be "parent-child" */}
+    </LayoutGroup>
+  </LayoutGroup>
+  ```
+</ParamField>
+
+## Shared Layout Animations
+
+Use `layoutId` to create smooth animations between components:
+
+```jsx
+import { motion, LayoutGroup } from "motion/react"
+
+function Tabs({ selected, onSelect }) {
+  return (
+    <LayoutGroup>
+      <div>
+        {tabs.map(tab => (
+          <button key={tab} onClick={() => onSelect(tab)">
+            {tab}
+            {selected === tab && (
+              <motion.div
+                layoutId="underline"
+                style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: 2,
+                  background: 'blue'
+                }}
+              />
+            )}
+          </button>
+        ))}
+      </div>
+    </LayoutGroup>
+  )
+}
+```
+
+## Examples
+
+### Tab Selector
+
+```jsx
+function TabSelector({ tabs, selected, onSelect }) {
+  return (
+    <LayoutGroup>
+      <div style={{ display: 'flex', gap: 8 }">
+        {tabs.map(tab => (
+          <motion.button
+            key={tab}
+            onClick={() => onSelect(tab)}
+            style={{
+              position: 'relative',
+              padding: '8px 16px',
+              background: 'transparent',
+              border: 'none'
+            }}
+          >
+            {tab}
+            {selected === tab && (
+              <motion.div
+                layoutId="selected-tab"
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background: '#eee',
+                  borderRadius: 8,
+                  zIndex: -1
+                }}
+                transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+              />
+            )}
+          </motion.button>
+        ))}
+      </div>
+    </LayoutGroup>
+  )
+}
+```
+
+### Expanding Cards
+
+```jsx
+function ExpandingCard({ items }) {
+  const [selected, setSelected] = useState(null)
+
+  return (
+    <LayoutGroup>
+      <div style={{ display: 'grid', gap: 16 }">
+        {items.map(item => (
+          <motion.div
+            key={item.id}
+            layoutId={`card-${item.id}`}
+            onClick={() => setSelected(item.id)}
+            style={{
+              padding: 16,
+              background: 'white',
+              borderRadius: 8,
+              cursor: 'pointer'
+            }}
+          >
+            <motion.h2 layoutId={`title-${item.id}`">
+              {item.title}
+            </motion.h2>
+            {selected === item.id && (
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                {item.description}
+              </motion.p>
+            )}
+          </motion.div>
+        ))}
+      </div>
+    </LayoutGroup>
+  )
+}
+```
+
+### Nested Layout Groups
+
+```jsx
+function NestedExample() {
+  return (
+    <LayoutGroup id="outer">
+      <motion.div layout>
+        <LayoutGroup id="inner">
+          <motion.div layout />
+          <motion.div layout />
+        </LayoutGroup>
+      </motion.div>
+    </LayoutGroup>
+  )
+}
+```
+
+### Grid Reordering
+
+```jsx
+function GridReorder({ items, onReorder }) {
+  return (
+    <LayoutGroup>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }">
+        {items.map(item => (
+          <motion.div
+            key={item.id}
+            layout
+            transition={{
+              layout: { type: 'spring', bounce: 0.3, duration: 0.6 }
+            }}
+            style={{
+              padding: 16,
+              background: '#eee',
+              borderRadius: 8
+            }}
+          >
+            {item.content}
+          </motion.div>
+        ))}
+      </div>
+    </LayoutGroup>
+  )
+}
+```
+
+## TypeScript
+
+```typescript
+import { LayoutGroup } from "motion/react"
+import type { Props } from "motion/react"
+
+type LayoutGroupProps = Props
+
+function Component(props: LayoutGroupProps) {
+  return <LayoutGroup {...props} />
+}
+```
+
+## How It Works
+
+When components with the same `layoutId` are rendered in different positions:
+
+1. The old component measures its bounding box
+2. The new component measures its bounding box
+3. Motion calculates the difference and animates the transform
+4. The old component is removed from the tree
+
+`LayoutGroup` ensures these measurements and animations are coordinated across the entire group.
+
+## Notes
+
+- Components with the same `layoutId` must be within the same `LayoutGroup`
+- Only one component with a given `layoutId` should be rendered at a time
+- Layout animations work with both position and size changes
+- Use `layout` prop without `layoutId` for independent layout animations
+
+## Related
+
+- [motion](/api/motion) - Core animation component with layout prop
+- [layout animations guide](/guides/layout-animations) - Learn more about layout animations
+- [AnimatePresence](/api/animate-presence) - Combine with exit animations

@@ -1,0 +1,500 @@
+---
+title: Drag Interactions
+description: Implement drag gestures with constraints, momentum, and snap-to-grid
+---
+
+Motion provides powerful drag gesture support with physics-based momentum, constraints, and elastic edges.
+
+## Basic Drag
+
+Enable dragging with the `drag` prop:
+
+```jsx
+<motion.div drag />
+```
+
+This allows free dragging in both x and y directions.
+
+## Axis Locking
+
+Constrain dragging to a single axis:
+
+```jsx
+<motion.div drag="x" />  {/* Horizontal only */}
+<motion.div drag="y" />  {/* Vertical only */}
+```
+
+## Drag Constraints
+
+Limit drag movement with pixel or ref-based constraints:
+
+### Pixel Constraints
+
+```jsx
+<motion.div
+  drag
+  dragConstraints={{
+    left: 0,
+    right: 100,
+    top: 0,
+    bottom: 100
+  }}
+/>
+```
+
+### Ref-Based Constraints
+
+Constrain within a parent element:
+
+```jsx
+import { useRef } from "react"
+
+export function ConstrainedDrag() {
+  const constraintsRef = useRef(null)
+  
+  return (
+    <div ref={constraintsRef} style={{ width: 400, height: 400 }">
+      <motion.div
+        drag
+        dragConstraints={constraintsRef}
+      />
+    </div>
+  )
+}
+```
+
+From `VisualElementDragControls.ts:351-354`, Motion handles ref constraints:
+
+```typescript
+if (dragConstraints && isRefObject(dragConstraints)) {
+  if (!this.constraints) {
+    this.constraints = this.resolveRefConstraints()
+  }
+}
+```
+
+## Elastic Edges
+
+Control the "bounce" at constraint edges:
+
+```jsx
+<motion.div
+  drag
+  dragConstraints={{ left: 0, right: 100 }}
+  dragElastic={0.1}  // 0 = no elastic, 1 = very elastic
+/>
+```
+
+Disable elastic edges entirely:
+
+```jsx
+<motion.div
+  drag
+  dragConstraints={{ left: 0, right: 100 }}
+  dragElastic={0}  // Completely rigid edges
+/>
+```
+
+From `VisualElementDragControls.ts:470-471`, elastic values affect spring physics:
+
+```typescript
+const bounceStiffness = dragElastic ? 200 : 1000000
+const bounceDamping = dragElastic ? 40 : 10000000
+```
+
+## Momentum and Inertia
+
+Control post-drag momentum:
+
+```jsx
+<motion.div
+  drag
+  dragMomentum={true}     // Enable momentum (default)
+  dragTransition={{
+    bounceStiffness: 200,   // Spring stiffness at edges
+    bounceDamping: 40,      // Spring damping
+    timeConstant: 750       // Momentum decay time
+  }}
+/>
+```
+
+Disable momentum for instant stop:
+
+```jsx
+<motion.div
+  drag
+  dragMomentum={false}
+/>
+```
+
+## Direction Lock
+
+Lock to the first detected drag direction:
+
+```jsx
+<motion.div
+  drag
+  dragDirectionLock
+  onDirectionLock={(axis) => console.log(axis)}  // "x" or "y"
+/>
+```
+
+From `VisualElementDragControls.ts:195-204`:
+
+```typescript
+if (dragDirectionLock && this.currentDirection === null) {
+  this.currentDirection = getCurrentDirection(offset)
+  
+  if (this.currentDirection !== null) {
+    onDirectionLock && onDirectionLock(this.currentDirection)
+  }
+  
+  return
+}
+```
+
+## Drag Events
+
+Respond to drag lifecycle:
+
+```jsx
+<motion.div
+  drag
+  onDragStart={(event, info) => {
+    console.log(info.point.x, info.point.y)
+  }}
+  onDrag={(event, info) => {
+    console.log(info.offset.x, info.offset.y)
+  }}
+  onDragEnd={(event, info) => {
+    console.log(info.velocity.x, info.velocity.y)
+  }}
+/>
+```
+
+### Info Object
+
+```typescript
+interface PanInfo {
+  point: { x: number, y: number }      // Current pointer position
+  delta: { x: number, y: number }      // Change since last event
+  offset: { x: number, y: number }     // Total movement from origin
+  velocity: { x: number, y: number }   // Velocity in px/s
+}
+```
+
+## Drag Controls
+
+Programmatically control drag with `useDragControls`:
+
+```jsx
+import { motion, useDragControls } from "motion/react"
+
+export function DragHandle() {
+  const controls = useDragControls()
+  
+  return (
+    <div>
+      <div 
+        onPointerDown={(e) => controls.start(e)}
+        style={{ cursor: "grab" }}
+      >
+        Drag Handle
+      </div>
+      <motion.div
+        drag
+        dragControls={controls}
+        dragListener={false}  // Disable automatic drag
+      />
+    </div>
+  )
+}
+```
+
+### Snap to Cursor
+
+Snap element to cursor position on drag start:
+
+```jsx
+const controls = useDragControls()
+
+function startDrag(e) {
+  controls.start(e, { snapToCursor: true })
+}
+```
+
+From `VisualElementDragControls.ts:111-113`:
+
+```typescript
+const onSessionStart = (event: PointerEvent) => {
+  if (snapToCursor) {
+    this.snapToCursor(extractEventInfo(event).point)
+  }
+}
+```
+
+## Real-World Examples
+
+### Draggable Card
+
+```jsx
+import { motion } from "motion/react"
+
+export function DraggableCard() {
+  return (
+    <motion.div
+      drag
+      dragConstraints={{
+        left: -100,
+        right: 100,
+        top: -100,
+        bottom: 100
+      }}
+      dragElastic={0.1}
+      whileDrag={{ scale: 1.05, cursor: "grabbing" }}
+      style={{
+        width: 200,
+        height: 200,
+        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+        borderRadius: 20,
+        cursor: "grab"
+      }}
+    >
+      Drag me!
+    </motion.div>
+  )
+}
+```
+
+### Slider Control
+
+```jsx
+import { useState } from "react"
+import { motion } from "motion/react"
+
+export function Slider() {
+  const [value, setValue] = useState(50)
+  
+  return (
+    <div style={{ width: 300, padding: 20 }">
+      <div style={{ position: "relative", height: 4, background: "#ddd" }">
+        <motion.div
+          drag="x"
+          dragConstraints={{ left: 0, right: 300 }}
+          dragElastic={0}
+          dragMomentum={false}
+          onDrag={(e, info) => {
+            setValue(Math.round((info.point.x / 300) * 100))
+          }}
+          style={{
+            width: 20,
+            height: 20,
+            borderRadius: "50%",
+            background: "#0070f3",
+            position: "absolute",
+            top: -8,
+            x: value * 3
+          }}
+        />
+      </div>
+      <p>Value: {value}</p>
+    </div>
+  )
+}
+```
+
+### Drag to Dismiss
+
+```jsx
+import { useState } from "react"
+import { motion, AnimatePresence } from "motion/react"
+
+export function DismissibleCard() {
+  const [items, setItems] = useState([1, 2, 3])
+  
+  return (
+    <AnimatePresence>
+      {items.map(item => (
+        <motion.div
+          key={item}
+          drag="x"
+          dragConstraints={{ left: 0, right: 0 }}
+          dragElastic={1}
+          onDragEnd={(e, info) => {
+            if (Math.abs(info.offset.x) > 100) {
+              setItems(items.filter(i => i !== item))
+            }
+          }}
+          exit={{ opacity: 0, height: 0 }}
+          style={{
+            padding: 20,
+            margin: 10,
+            background: "white",
+            borderRadius: 8
+          }}
+        >
+          Swipe to dismiss
+        </motion.div>
+      ))}
+    </AnimatePresence>
+  )
+}
+```
+
+### Constrained in Rotated Parent
+
+From the actual codebase example `Drag-draggable.tsx`:
+
+```jsx
+import { motion } from "motion/react"
+import { useRef } from "react"
+
+export function ConstrainedDrag() {
+  const ref = useRef(null)
+  
+  return (
+    <motion.div
+      drag
+      dragConstraints={{ left: 0, right: 100, top: 0, bottom: 100 }}
+      ref={ref}
+      dragElastic={0}
+      whileTap={{ scale: 0.95 }}
+      style={{
+        width: 200,
+        height: 200,
+        background: "white",
+        borderRadius: 20
+      }}
+    />
+  )
+}
+```
+
+## Drag Propagation
+
+Control whether child drags affect parent:
+
+```jsx
+<motion.div drag>
+  <motion.div 
+    drag
+    dragPropagation  // Allow parent to receive drag events
+  />
+</motion.div>
+```
+
+## Blocking Text Selection
+
+Motion automatically handles text input elements. From `VisualElementDragControls.ts:667-669`:
+
+```typescript
+const isClickingTextInputChild =
+  target !== element && isElementTextInput(target)
+
+if (drag && dragListener && !isClickingTextInputChild) {
+  this.start(event)
+}
+```
+
+This prevents drag from interfering with input, textarea, select, and contenteditable elements.
+
+## Layout-Aware Drag
+
+Combine drag with layout animations:
+
+```jsx
+<motion.div
+  layout
+  drag
+  dragConstraints={parentRef}
+/>
+```
+
+From `VisualElementDragControls.ts:728-737`, drag automatically compensates for layout changes:
+
+```typescript
+if (this.isDragging && hasLayoutChanged) {
+  eachAxis((axis) => {
+    const motionValue = this.getAxisMotionValue(axis)
+    if (!motionValue) return
+    
+    this.originPoint[axis] += delta[axis].translate
+    motionValue.set(motionValue.get() + delta[axis].translate)
+  })
+}
+```
+
+## Snap to Origin
+
+Return to starting position after drag:
+
+```jsx
+<motion.div
+  drag
+  dragSnapToOrigin
+  dragTransition={{ bounceStiffness: 200, bounceDamping: 40 }}
+/>
+```
+
+From `VisualElementDragControls.ts:238-241`:
+
+```typescript
+const resumeAnimation = () => {
+  const { dragSnapToOrigin: snap } = this.getProps()
+  if (snap || this.constraints) {
+    this.startAnimation({ x: 0, y: 0 })
+  }
+}
+```
+
+## Performance Tips
+
+<Tip>
+  **Use `dragElastic={0}` for UI controls** - Eliminates elastic calculation overhead.
+</Tip>
+
+<Tip>
+  **Disable `dragMomentum` for precise controls** - Reduces physics calculations for sliders and handles.
+</Tip>
+
+<Tip>
+  **Add `will-change: transform`** - Motion does this automatically, but can be added manually for complex scenarios.
+</Tip>
+
+## Accessibility
+
+Make draggable elements keyboard accessible:
+
+```jsx
+<motion.div
+  drag="x"
+  dragConstraints={{ left: 0, right: 100 }}
+  tabIndex={0}
+  role="slider"
+  aria-valuemin={0}
+  aria-valuemax={100}
+  aria-valuenow={value}
+  onKeyDown={(e) => {
+    if (e.key === 'ArrowRight') {
+      // Handle keyboard interaction
+    }
+  }}
+/>
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Spring Animations" icon="wave-pulse" href="/guides/spring-animations">
+    Fine-tune drag physics
+  </Card>
+  <Card title="Layout Transitions" icon="arrows-maximize" href="/guides/layout-transitions">
+    Combine drag with layout
+  </Card>
+  <Card title="Performance" icon="gauge-high" href="/guides/performance">
+    Optimize drag performance
+  </Card>
+  <Card title="Accessibility" icon="universal-access" href="/guides/accessibility">
+    Make drag accessible
+  </Card>
+</CardGroup>

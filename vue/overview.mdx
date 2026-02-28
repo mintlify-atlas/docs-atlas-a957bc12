@@ -1,0 +1,142 @@
+---
+title: Vue Integration
+description: Motion for Vue - powerful animations for Vue 3 applications
+---
+
+Motion provides a first-class Vue integration with the same powerful animation capabilities available in React and vanilla JavaScript.
+
+## Installation
+
+```bash
+npm install motion-v
+```
+
+## Quick Start
+
+Import the `motion` component from `motion-v` and use it like any other Vue component:
+
+```vue
+<script setup>
+import { motion } from "motion-v"
+</script>
+
+<template>
+  <motion.div :animate="{ x: 100 }" />
+</template>
+```
+
+## Features
+
+Motion for Vue includes all the core Motion features:
+
+- **Declarative animations** - Animate elements with simple props
+- **Spring physics** - Natural, physics-based motion
+- **Gestures** - Built-in drag, hover, tap, and focus interactions
+- **Layout animations** - Automatic animations when layout changes
+- **Scroll animations** - Link animations to scroll position
+- **GPU acceleration** - Hardware-accelerated animations for smooth 60fps+ performance
+
+## API Compatibility
+
+The Vue integration closely mirrors the React API, with Vue-specific conventions:
+
+- Props use Vue's `:prop` syntax for reactive bindings
+- Events use Vue's `@event` syntax
+- Refs work with Vue's `ref()` API
+
+## Component Types
+
+Motion components are available for all HTML and SVG elements:
+
+```vue
+<motion.div />      <!-- HTML elements -->
+<motion.button />
+<motion.section />
+
+<motion.svg />      <!-- SVG elements -->
+<motion.circle />
+<motion.path />
+```
+
+## Core Concepts
+
+### Animate Prop
+
+The `animate` prop defines the target animation state:
+
+```vue
+<motion.div 
+  :animate="{ 
+    x: 100, 
+    opacity: 1,
+    rotate: 45 
+  }" 
+/>
+```
+
+### Initial Prop
+
+Set the initial state before animation:
+
+```vue
+<motion.div 
+  :initial="{ opacity: 0, scale: 0.8 }"
+  :animate="{ opacity: 1, scale: 1 }"
+/>
+```
+
+### Transition Prop
+
+Control animation timing and behavior:
+
+```vue
+<motion.div 
+  :animate="{ x: 100 }"
+  :transition="{ 
+    duration: 0.5, 
+    ease: 'easeOut' 
+  }"
+/>
+```
+
+## Reactive Animations
+
+Motion automatically responds to reactive data changes:
+
+```vue
+<script setup>
+import { ref } from 'vue'
+import { motion } from 'motion-v'
+
+const x = ref(0)
+const toggle = () => {
+  x.value = x.value === 0 ? 100 : 0
+}
+</script>
+
+<template>
+  <motion.div 
+    :animate="{ x: x }" 
+    @click="toggle"
+  >
+    Click me
+  </motion.div>
+</template>
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Getting Started" icon="rocket" href="/vue/getting-started">
+    Set up your first Vue Motion project
+  </Card>
+  <Card title="Spring Animations" icon="wave-pulse" href="/guides/spring-animations">
+    Create natural, physics-based animations
+  </Card>
+  <Card title="Gestures" icon="hand-pointer" href="/guides/drag-interactions">
+    Add drag and gesture interactions
+  </Card>
+  <Card title="Performance" icon="gauge-high" href="/guides/performance">
+    Optimize for smooth 60fps animations
+  </Card>
+</CardGroup>

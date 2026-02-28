@@ -1,0 +1,360 @@
+---
+title: Motion Components
+description: Using motion.div and other motion-wrapped elements
+---
+
+Motion components are the foundation of Motion's React integration. They wrap standard HTML and SVG elements with powerful animation capabilities.
+
+## Creating Motion Components
+
+Any HTML or SVG element can be animated by prefixing it with `motion.`:
+
+```jsx
+import { motion } from "motion"
+
+// HTML elements
+<motion.div />
+<motion.button />
+<motion.input />
+<motion.section />
+
+// SVG elements
+<motion.svg />
+<motion.circle />
+<motion.path />
+<motion.polygon />
+```
+
+## Basic Animation
+
+Animate any animatable property using the `animate` prop:
+
+```jsx
+function App() {
+  return (
+    <motion.div
+      animate={{ x: 100 }}
+      transition={{ duration: 1 }}
+      style={{ width: 100, height: 100, background: "white" }}
+    />
+  )
+}
+```
+
+## Animation Props
+
+### `initial`
+
+Defines the starting state before animations begin:
+
+```jsx
+<motion.div
+  initial={{ opacity: 0, scale: 0.5 }}
+  animate={{ opacity: 1, scale: 1 }}
+/>
+```
+
+Set to `false` to disable initial animations:
+
+```jsx
+<motion.div initial={false} animate={{ x: 100 }} />
+```
+
+### `animate`
+
+Defines the target animation state:
+
+```jsx
+function Example() {
+  const [isVisible, setIsVisible] = useState(false)
+
+  return (
+    <motion.div
+      animate={{
+        opacity: isVisible ? 1 : 0,
+        scale: isVisible ? 1 : 0.8
+      }}
+    />
+  )
+}
+```
+
+### `transition`
+
+Configures how the animation runs:
+
+```jsx
+<motion.div
+  animate={{ x: 100 }}
+  transition={{
+    duration: 1,
+    ease: "easeInOut",
+    times: [0, 0.5, 1]
+  }}
+/>
+```
+
+#### Transition Types
+
+**Tween (default)**
+
+```jsx
+transition={{ duration: 0.5, ease: "easeOut" }}
+```
+
+**Spring**
+
+```jsx
+transition={{
+  type: "spring",
+  stiffness: 300,
+  damping: 10
+}}
+```
+
+**Inertia**
+
+```jsx
+transition={{
+  type: "inertia",
+  velocity: 50,
+  power: 0.8
+}}
+```
+
+## Style Prop
+
+The `style` prop is enhanced to support `MotionValue`s and transform properties:
+
+```jsx
+import { motion, useMotionValue } from "motion"
+
+function Component() {
+  const x = useMotionValue(0)
+
+  return (
+    <motion.div
+      style={{
+        x,
+        opacity: 1,
+        scale: 0.5,
+        rotate: 45,
+        backgroundColor: "#fff"
+      }}
+    />
+  )
+}
+```
+
+### Transform Properties
+
+Transform properties can be set individually instead of as a string:
+
+```jsx
+// Instead of transform: "translateX(100px) scale(2)"
+<motion.div
+  style={{
+    x: 100,
+    scale: 2
+  }}
+/>
+```
+
+Supported transform properties:
+- `x`, `y`, `z`
+- `translateX`, `translateY`, `translateZ`
+- `scale`, `scaleX`, `scaleY`
+- `rotate`, `rotateX`, `rotateY`, `rotateZ`
+- `skew`, `skewX`, `skewY`
+
+## Gesture Animations
+
+Motion components respond to user interactions:
+
+### Hover
+
+```jsx
+<motion.button
+  whileHover={{ scale: 1.1, opacity: 0.8 }}
+  style={{ width: 100, height: 100, background: "white" }}
+>
+  Hover me
+</motion.button>
+```
+
+### Tap/Click
+
+```jsx
+<motion.button
+  whileTap={{ scale: 0.95 }}
+  onTap={() => console.log("Tapped!")}
+>
+  Click me
+</motion.button>
+```
+
+### Focus
+
+```jsx
+<motion.input
+  whileFocus={{ scale: 1.05 }}
+  style={{ padding: 10 }}
+/>
+```
+
+### Drag
+
+```jsx
+<motion.div
+  drag
+  dragConstraints={{ left: 0, right: 300, top: 0, bottom: 300 }}
+  dragElastic={0.2}
+  style={{ width: 100, height: 100, background: "white" }}
+/>
+```
+
+## Variants
+
+Define reusable animation states:
+
+```jsx
+const variants = {
+  hidden: { opacity: 0, y: 50 },
+  visible: { opacity: 1, y: 0 }
+}
+
+function Component() {
+  return (
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      variants={variants}
+    />
+  )
+}
+```
+
+### Propagating Variants
+
+Variants automatically propagate to children:
+
+```jsx
+const list = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      when: "beforeChildren",
+      staggerChildren: 0.1
+    }
+  }
+}
+
+const item = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 }
+}
+
+function List({ items }) {
+  return (
+    <motion.ul
+      initial="hidden"
+      animate="visible"
+      variants={list}
+    >
+      {items.map(item => (
+        <motion.li key={item} variants={item">
+          {item}
+        </motion.li>
+      ))}
+    </motion.ul>
+  )
+}
+```
+
+## Animating CSS Variables
+
+```jsx
+<motion.div
+  animate={{ "--color": "#ff0088" }}
+  style={{
+    backgroundColor: "var(--color)",
+    width: 100,
+    height: 100
+  }}
+/>
+```
+
+## SVG Animations
+
+Motion supports SVG-specific properties:
+
+```jsx
+<motion.svg width="100" height="100">
+  <motion.circle
+    cx="50"
+    cy="50"
+    r="20"
+    stroke="#fff"
+    initial={{ pathLength: 0 }}
+    animate={{ pathLength: 1 }}
+    transition={{ duration: 2 }}
+  />
+</motion.svg>
+```
+
+SVG-specific properties:
+- `pathLength` - Length of SVG path (0-1)
+- `pathOffset` - Offset of SVG path
+- `pathSpacing` - Spacing of SVG path
+
+## The `m` Component
+
+For smaller bundle sizes, use the `m` component which has reduced features:
+
+```jsx
+import { m } from "motion"
+
+<m.div animate={{ x: 100 }} />
+```
+
+Use `m` when you don't need:
+- Drag gestures
+- Layout animations
+- Advanced features
+
+## MotionProps Type
+
+For TypeScript users, use the `MotionProps` type:
+
+```tsx
+import { motion, MotionProps } from "motion"
+import { FC } from "react"
+
+interface CardProps extends MotionProps {
+  title: string
+}
+
+const Card: FC<CardProps> = ({ title, ...motionProps }) => {
+  return (
+    <motion.div {...motionProps">
+      <h2>{title}</h2>
+    </motion.div>
+  )
+}
+```
+
+## Performance Tips
+
+1. **Prefer transform properties** - `x`, `y`, `scale`, `rotate` are GPU-accelerated
+2. **Use `MotionValue`s** - For values that update frequently
+3. **Avoid animating expensive properties** - Width, height, top, left cause layout
+4. **Use `layout` prop** - For animating layout changes efficiently
+
+```jsx
+// Good - GPU accelerated
+<motion.div animate={{ x: 100, scale: 2 }} />
+
+// Avoid - Causes layout recalculation
+<motion.div animate={{ width: 200, marginLeft: 50 }} />
+```

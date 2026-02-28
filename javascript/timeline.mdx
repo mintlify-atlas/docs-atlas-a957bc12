@@ -1,0 +1,412 @@
+---
+title: timeline()
+description: Create sophisticated sequenced animations with precise timing control
+---
+
+Timelines allow you to create complex, sequenced animations where multiple elements animate in a coordinated sequence. In Motion, timelines are created using the `animate()` function with sequence syntax.
+
+## Sequence Syntax
+
+Timelines are defined as an array of animation segments:
+
+```typescript
+animate(sequence: AnimationSequence, options?: SequenceOptions)
+```
+
+### AnimationSequence
+
+An array of segments, where each segment is:
+
+```typescript
+type Segment = 
+  | [element, keyframes]                    // Basic animation
+  | [element, keyframes, options]           // With options
+  | string                                  // Label
+  | { name: string, at: SequenceTime }      // Label with time
+```
+
+## Basic Usage
+
+### Simple Sequence
+
+```javascript
+import { animate } from "motion"
+
+animate([
+  [".box1", { x: 100 }],
+  [".box2", { y: 100 }],
+  [".box3", { scale: 2 }]
+])
+```
+
+By default, each animation plays after the previous one completes.
+
+### With Options
+
+```javascript
+animate([
+  [".box1", { x: 100 }, { duration: 1 }],
+  [".box2", { y: 100 }, { duration: 0.5 }],
+  [".box3", { scale: 2 }, { duration: 0.8 }]
+])
+```
+
+### Parallel Animations
+
+Use `at` option to control timing:
+
+```javascript
+animate([
+  [".box1", { x: 100 }],
+  [".box2", { y: 100 }, { at: "<" }], // Start with previous
+  [".box3", { scale: 2 }, { at: "<" }]
+])
+```
+
+## Timing Control
+
+### Absolute Time
+
+```javascript
+animate([
+  [".box1", { x: 100 }],                  // Starts at 0s
+  [".box2", { y: 100 }, { at: 1 }],       // Starts at 1s
+  [".box3", { scale: 2 }, { at: 2.5 }]    // Starts at 2.5s
+])
+```
+
+### Relative Time
+
+```javascript
+animate([
+  [".box1", { x: 100 }],
+  [".box2", { y: 100 }, { at: "+0.5" }],  // 0.5s after previous ends
+  [".box3", { scale: 2 }, { at: "-0.2" }] // 0.2s before previous ends
+])
+```
+
+### Start with Previous
+
+```javascript
+animate([
+  [".box1", { x: 100 }, { duration: 1 }],
+  [".box2", { y: 100 }, { at: "<" }],      // Start when box1 starts
+  [".box3", { scale: 2 }, { at: "<" }]     // Start when box2 starts
+])
+```
+
+### Offset from Previous Start
+
+```javascript
+animate([
+  [".box1", { x: 100 }, { duration: 2 }],
+  [".box2", { y: 100 }, { at: "<+0.5" }],  // 0.5s after box1 starts
+  [".box3", { scale: 2 }, { at: "<-0.2" }] // 0.2s before box2 starts
+])
+```
+
+## Labels
+
+### Named Time Points
+
+```javascript
+animate([
+  [".box1", { x: 100 }],
+  "midpoint",                              // Label at current time
+  [".box2", { y: 100 }],
+  [".box3", { scale: 2 }, { at: "midpoint" }] // Start at label
+])
+```
+
+### Labels with Offset
+
+```javascript
+animate([
+  [".box1", { x: 100 }],
+  "start",
+  [".box2", { y: 100 }],
+  [".box3", { scale: 2 }, { at: "start+0.5" }] // 0.5s after 'start' label
+])
+```
+
+### Label Objects
+
+```javascript
+animate([
+  [".box1", { x: 100 }, { duration: 2 }],
+  { name: "middle", at: 1 },              // Label at specific time
+  [".box2", { y: 100 }, { at: "middle" }]
+])
+```
+
+## Sequence Options
+
+```typescript
+interface SequenceOptions {
+  delay?: number              // Delay entire sequence
+  duration?: number           // Total duration (overrides individual)
+  defaultTransition?: object  // Default options for all segments
+  reduceMotion?: boolean      // Respect prefers-reduced-motion
+}
+```
+
+### Default Transitions
+
+```javascript
+animate([
+  [".box1", { x: 100 }],
+  [".box2", { y: 100 }],
+  [".box3", { scale: 2 }]
+], {
+  defaultTransition: {
+    duration: 0.5,
+    ease: "easeInOut"
+  }
+})
+```
+
+### Total Duration
+
+```javascript
+// Stretch entire sequence to 5 seconds
+animate([
+  [".box1", { x: 100 }],
+  [".box2", { y: 100 }],
+  [".box3", { scale: 2 }]
+], {
+  duration: 5
+})
+```
+
+## Examples
+
+### Stagger Effect
+
+```javascript
+import { animate, spring } from "motion"
+
+const boxes = document.querySelectorAll(".box")
+
+// Create sequence with stagger
+const sequence = Array.from(boxes).map((box, i) => [
+  box,
+  { y: [0, -50, 0] },
+  { 
+    at: i * 0.1,
+    type: spring,
+    bounce: 0.5
+  }
+])
+
+animate(sequence)
+```
+
+### Loading Animation
+
+```javascript
+animate([
+  [".spinner", { rotate: 360 }, { duration: 1, ease: "linear" }],
+  [".progress", { scaleX: [0, 1] }, { duration: 2, at: "<" }],
+  [".checkmark", { scale: [0, 1.2, 1] }, { duration: 0.5 }],
+  [".message", { opacity: [0, 1], y: [20, 0] }, { at: "<" }]
+])
+```
+
+### Entrance Sequence
+
+```javascript
+animate([
+  "start",
+  [".header", { opacity: [0, 1], y: [-50, 0] }, { duration: 0.6 }],
+  [".nav", { opacity: [0, 1], x: [-100, 0] }, { at: "start+0.2" }],
+  [".hero", { opacity: [0, 1], scale: [0.8, 1] }, { at: "start+0.4" }],
+  [".content", { opacity: [0, 1], y: [30, 0] }, { duration: 0.8 }]
+])
+```
+
+### Card Flip Sequence
+
+```javascript
+animate([
+  [".card", { rotateY: 90 }, { duration: 0.3 }],
+  [".card-back", { opacity: 1 }, { at: "<" }],
+  [".card-front", { opacity: 0 }, { at: "<" }],
+  [".card", { rotateY: 180 }, { duration: 0.3 }]
+])
+```
+
+### Text Animation
+
+```javascript
+const words = document.querySelectorAll(".word")
+
+const sequence = [
+  ...Array.from(words).map((word, i) => [
+    word,
+    { opacity: [0, 1], y: [20, 0] },
+    { at: i * 0.05, duration: 0.4 }
+  ])
+]
+
+animate(sequence)
+```
+
+### Progress Steps
+
+```javascript
+animate([
+  [".step-1", { scale: [1, 1.1, 1] }, { duration: 0.3 }],
+  [".step-1 .check", { opacity: [0, 1], scale: [0, 1] }, { at: "<" }],
+  [".connector-1", { scaleX: [0, 1] }, { duration: 0.5 }],
+  [".step-2", { scale: [1, 1.1, 1] }, { duration: 0.3 }],
+  [".step-2 .check", { opacity: [0, 1], scale: [0, 1] }, { at: "<" }],
+  [".connector-2", { scaleX: [0, 1] }, { duration: 0.5 }],
+  [".step-3", { scale: [1, 1.1, 1] }, { duration: 0.3 }],
+  [".step-3 .check", { opacity: [0, 1], scale: [0, 1] }, { at: "<" }]
+])
+```
+
+### Scroll Reveal with Timeline
+
+```javascript
+import { inView, animate } from "motion"
+
+inView(".section", (section) => {
+  animate([
+    [section.querySelector(".title"), { opacity: [0, 1], y: [30, 0] }],
+    [section.querySelector(".subtitle"), { opacity: [0, 1] }, { at: "+0.1" }],
+    [section.querySelectorAll(".item"), { opacity: [0, 1], x: [-20, 0] }, { at: "+0.2" }]
+  ])
+})
+```
+
+### Gallery Transition
+
+```javascript
+function transitionGallery(fromImage, toImage) {
+  animate([
+    [fromImage, { scale: 1.1, opacity: 0 }, { duration: 0.3 }],
+    [toImage, { scale: [0.9, 1], opacity: [0, 1] }, { duration: 0.3, at: "<+0.15" }]
+  ])
+}
+```
+
+### Menu Animation
+
+```javascript
+const menuItems = document.querySelectorAll(".menu-item")
+
+function openMenu() {
+  animate([
+    [".menu-bg", { opacity: [0, 1] }, { duration: 0.2 }],
+    [".menu-container", { scale: [0.9, 1], opacity: [0, 1] }, { duration: 0.3, at: "<" }],
+    ...Array.from(menuItems).map((item, i) => [
+      item,
+      { opacity: [0, 1], x: [-20, 0] },
+      { at: `<+${i * 0.05}`, duration: 0.3 }
+    ])
+  ])
+}
+```
+
+## Advanced Usage
+
+### Motion Value Animation
+
+```javascript
+import { motionValue } from "motion"
+
+const progress = motionValue(0)
+
+animate([
+  [progress, 50, { duration: 1 }],
+  [progress, 100, { duration: 1 }],
+  [(value) => console.log(value), [0, 1], { at: "<" }]
+])
+```
+
+### Callback Segments
+
+```javascript
+animate([
+  [".box1", { x: 100 }],
+  [(progress) => console.log(`Progress: ${progress}`), [0, 1], { at: "<" }],
+  [".box2", { y: 100 }]
+])
+```
+
+### Mixed Animations
+
+```javascript
+import { motionValue, animate } from "motion"
+
+const counter = motionValue(0)
+const element = document.querySelector(".box")
+
+animate([
+  [element, { x: 100 }, { duration: 1 }],
+  [counter, 100, { duration: 1, at: "<" }],
+  [element, { rotate: 360 }, { duration: 0.5 }],
+  [counter, 0, { duration: 0.5, at: "<" }]
+])
+```
+
+### Looped Sequence
+
+```javascript
+const loopSequence = () => {
+  animate([
+    [".dot-1", { scale: [1, 1.5, 1] }, { duration: 0.6 }],
+    [".dot-2", { scale: [1, 1.5, 1] }, { duration: 0.6, at: "+0.2" }],
+    [".dot-3", { scale: [1, 1.5, 1] }, { duration: 0.6, at: "+0.2" }]
+  ]).then(loopSequence)
+}
+
+loopSequence()
+```
+
+## Playback Controls
+
+Sequences return the same controls as regular animations:
+
+```javascript
+const timeline = animate([
+  [".box1", { x: 100 }],
+  [".box2", { y: 100 }],
+  [".box3", { scale: 2 }]
+])
+
+// Control playback
+timeline.pause()
+timeline.play()
+timeline.speed = 0.5
+timeline.time = 2 // Jump to 2 seconds
+```
+
+## Performance Tips
+
+1. **Prefer transform properties** (x, y, scale, rotate) for GPU acceleration
+2. **Use labels** for complex timing instead of calculating offsets
+3. **Batch similar animations** to start at the same time using `at: "<"`
+4. **Limit concurrent animations** to maintain 60fps
+5. **Use `defaultTransition`** to reduce repetition
+
+## Timing Reference
+
+| Syntax | Meaning | Example |
+|--------|---------|--------|
+| `number` | Absolute time in seconds | `at: 2` |
+| `"<"` | Start of previous animation | `at: "<"` |
+| `"+number"` | Relative to previous end | `at: "+0.5"` |
+| `"-number"` | Before previous end | `at: "-0.2"` |
+| `"<+number"` | After previous start | `at: "<+0.3"` |
+| `"<-number"` | Before previous start | `at: "<-0.1"` |
+| `"label"` | At named label | `at: "start"` |
+| `"label+number"` | After label | `at: "start+0.5"` |
+
+## Browser Support
+
+- Works in all modern browsers
+- Uses optimized animation scheduling
+- Falls back gracefully for unsupported features
+- Fully compatible with Motion's animation engine

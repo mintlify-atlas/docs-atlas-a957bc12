@@ -1,0 +1,259 @@
+---
+title: useSpring
+description: Create a MotionValue that animates to its target with spring physics
+---
+
+## Overview
+
+Creates a `MotionValue` that, when `set`, will use a spring animation to animate to its new state.
+
+It can either work as a stand-alone `MotionValue` by initializing it with a value, or as a subscriber to another `MotionValue`.
+
+## Import
+
+```jsx
+import { useSpring } from "motion/react"
+```
+
+## Signatures
+
+### Standalone Spring Value
+
+```typescript
+function useSpring(
+  source: number,
+  options?: SpringOptions
+): MotionValue<number>
+
+function useSpring(
+  source: string,
+  options?: SpringOptions
+): MotionValue<string>
+```
+
+### Following Another MotionValue
+
+```typescript
+function useSpring(
+  source: MotionValue<number>,
+  options?: SpringOptions
+): MotionValue<number>
+
+function useSpring(
+  source: MotionValue<string>,
+  options?: SpringOptions
+): MotionValue<string>
+```
+
+## Parameters
+
+<ParamField path="source" type="number | string or MotionValue" required>
+  Initial value or a `MotionValue` to follow. When a `MotionValue` is provided, the created spring value will animate towards changes in the source value
+</ParamField>
+
+<ParamField path="options" type="SpringOptions">
+  Spring configuration options:
+  
+  **Physical Properties:**
+  - `stiffness`: Stiffness of the spring (default: `100`)
+  - `damping`: Strength of opposing force (default: `10`)
+  - `mass`: Mass of the moving object (default: `1`)
+  
+  **Simplified Properties:**
+  - `bounce`: Bounciness from `0` (no bounce) to `1` (extremely bouncy). Default: `0.25` when duration is set
+  - `duration`: Duration of the animation in seconds
+  - `velocity`: Initial velocity of the animation
+  
+  Note: `bounce` and `duration` are overridden if `stiffness`, `damping`, or `mass` are set
+</ParamField>
+
+## Usage
+
+### Basic Spring Value
+
+Create a standalone spring value:
+
+```jsx
+import { motion, useSpring } from "motion/react"
+
+export function Component() {
+  const x = useSpring(0, { stiffness: 300, damping: 20 })
+
+  return (
+    <motion.div
+      style={{ x }}
+      onTap={() => x.set(100)}
+    />
+  )
+}
+```
+
+### Following Another MotionValue
+
+Create a spring that follows another motion value:
+
+```jsx
+import { motion, useMotionValue, useSpring } from "motion/react"
+
+export function Component() {
+  const x = useMotionValue(0)
+  const smoothX = useSpring(x, { damping: 50, stiffness: 400 })
+
+  return (
+    <>
+      <motion.div style={{ x }} drag="x" />
+      <motion.div style={{ x: smoothX }} />
+    </>
+  )
+}
+```
+
+### Custom Spring Configuration
+
+Fine-tune spring physics:
+
+```jsx
+import { motion, useSpring } from "motion/react"
+
+export function Component() {
+  const scale = useSpring(1, {
+    stiffness: 100,
+    damping: 10,
+    mass: 0.5
+  })
+
+  return (
+    <motion.div
+      style={{ scale }}
+      onHoverStart={() => scale.set(1.2)}
+      onHoverEnd={() => scale.set(1)}
+    />
+  )
+}
+```
+
+### With Duration and Bounce
+
+Use simplified spring configuration:
+
+```jsx
+import { motion, useSpring } from "motion/react"
+
+export function Component() {
+  const y = useSpring(0, {
+    duration: 0.6,
+    bounce: 0.3
+  })
+
+  return (
+    <motion.div
+      style={{ y }}
+      onTap={() => y.set(100)}
+    />
+  )
+}
+```
+
+### Smooth Scroll Follower
+
+Smooth out scroll-based values:
+
+```jsx
+import { motion, useScroll, useSpring } from "motion/react"
+
+export function Component() {
+  const { scrollYProgress } = useScroll()
+  const smoothProgress = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30
+  })
+
+  return (
+    <motion.div
+      style={{
+        scaleX: smoothProgress,
+        transformOrigin: "left"
+      }}
+    />
+  )
+}
+```
+
+### Chained Springs
+
+Create cascading spring effects:
+
+```jsx
+import { motion, useMotionValue, useSpring } from "motion/react"
+
+export function Component() {
+  const x = useMotionValue(0)
+  const spring1 = useSpring(x, { stiffness: 300 })
+  const spring2 = useSpring(spring1, { stiffness: 200 })
+
+  return (
+    <>
+      <motion.div style={{ x }} drag="x" />
+      <motion.div style={{ x: spring1 }} />
+      <motion.div style={{ x: spring2 }} />
+    </>
+  )
+}
+```
+
+### String Values
+
+Animate string-based values with springs:
+
+```jsx
+import { motion, useSpring } from "motion/react"
+
+export function Component() {
+  const color = useSpring("#ff0000", {
+    stiffness: 200,
+    damping: 30
+  })
+
+  return (
+    <motion.div
+      style={{ backgroundColor: color }}
+      onTap={() => color.set("#0000ff")}
+    />
+  )
+}
+```
+
+## Spring Physics Guide
+
+### Stiffness
+
+- Higher values create more sudden, snappy movement
+- Lower values create slower, more gradual movement
+- Default: `100`
+
+### Damping
+
+- Higher values reduce oscillation (less bouncy)
+- Lower values increase oscillation (more bouncy)
+- `0` creates infinite oscillation
+- Default: `10`
+
+### Mass
+
+- Higher values make the animation feel heavier and slower
+- Lower values make the animation feel lighter and faster
+- Default: `1`
+
+## Notes
+
+- Spring animations automatically calculate duration based on physics
+- Springs maintain velocity when interrupted by new values
+- Use `damping: 0` cautiously as it creates infinite oscillation
+- When following a `MotionValue`, springs update automatically as the source changes
+
+## Related
+
+- [useMotionValue](/api/use-motion-value) - Create motion values
+- [useTransform](/api/use-transform) - Transform motion values
+- [useVelocity](/api/use-velocity) - Track velocity
+- [Spring animations guide](/guides/spring-animations) - Learn more about springs

@@ -1,0 +1,151 @@
+---
+title: React Integration
+description: Comprehensive guide to using Motion with React
+---
+
+Motion provides a powerful React integration that makes it easy to create fluid animations and interactions in your React applications.
+
+## Installation
+
+Install Motion via npm or yarn:
+
+```bash
+npm install motion
+```
+
+```bash
+yarn add motion
+```
+
+## Quick Start
+
+Motion exports everything from `framer-motion`, providing both `motion` and `m` components:
+
+```jsx
+import { motion } from "motion"
+
+function App() {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 1 }}
+    >
+      Hello World
+    </motion.div>
+  )
+}
+```
+
+## Core Concepts
+
+### Motion Components
+
+Motion wraps standard HTML and SVG elements with animation capabilities. Any HTML or SVG element can be animated by prefixing it with `motion.`:
+
+```jsx
+<motion.div />
+<motion.button />
+<motion.svg />
+<motion.path />
+```
+
+### Animation Props
+
+Motion components accept several props to control animations:
+
+- `initial` - Starting state for animations
+- `animate` - Target state for animations
+- `exit` - State when component is removed (requires `AnimatePresence`)
+- `transition` - Configuration for the animation
+- `style` - Enhanced style prop supporting `MotionValue`s
+
+```jsx
+<motion.div
+  initial={{ x: -100, opacity: 0 }}
+  animate={{ x: 0, opacity: 1 }}
+  transition={{ duration: 0.5, ease: "easeOut" }}
+/>
+```
+
+### Gesture Animations
+
+Motion provides declarative gesture handlers:
+
+```jsx
+<motion.button
+  whileHover={{ scale: 1.1 }}
+  whileTap={{ scale: 0.95 }}
+  whileFocus={{ outline: "2px solid blue" }}
+>
+  Click me
+</motion.button>
+```
+
+## The `m` Component
+
+For bundle size optimization, Motion also exports a minimal `m` component with the same API:
+
+```jsx
+import { m } from "motion"
+
+function App() {
+  return <m.div animate={{ x: 100 }} />
+}
+```
+
+## Package Structure
+
+Motion is a re-export of `framer-motion`, which is part of a larger monorepo:
+
+- **`motion`** - Main package, re-exports everything from `framer-motion`
+- **`framer-motion`** - React-specific animation code
+- **`motion-dom`** - Vanilla JavaScript animation library
+- **`motion-utils`** - Pure functions and easing utilities
+
+## TypeScript Support
+
+Motion is written in TypeScript and provides full type definitions:
+
+```tsx
+import { motion, MotionProps } from "motion"
+import { FC } from "react"
+
+const AnimatedCard: FC<MotionProps> = (props) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      {...props}
+    />
+  )
+}
+```
+
+## Next Steps
+
+- Learn about [Motion Components](/react/motion-components) and available elements
+- Explore [AnimatePresence](/react/animate-presence) for exit animations
+- Discover [Layout Animations](/react/layout-animations) for shared element transitions
+- Master [React Hooks](/react/hooks) for advanced animation control
+
+## Performance
+
+Motion is highly optimized for performance:
+
+- Uses GPU-accelerated transforms when possible
+- Batches reads and writes to prevent layout thrashing
+- Supports reduced motion preferences
+- Provides tools like `LazyMotion` for code splitting
+
+```jsx
+import { LazyMotion, domAnimation, m } from "motion"
+
+function App() {
+  return (
+    <LazyMotion features={domAnimation">
+      <m.div animate={{ x: 100 }} />
+    </LazyMotion>
+  )
+}
+```

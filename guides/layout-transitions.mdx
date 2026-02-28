@@ -1,0 +1,465 @@
+---
+title: Layout Animations
+description: Automatically animate layout changes with shared layouts and FLIP technique
+---
+
+Motion automatically animates layout changes when you add the `layout` prop, using the FLIP technique (First, Last, Invert, Play) for performant animations.
+
+## Basic Layout Animation
+
+Add the `layout` prop to animate size and position changes:
+
+```jsx
+import { useState } from "react"
+import { motion } from "motion/react"
+
+export function ExpandableBox() {
+  const [isExpanded, setIsExpanded] = useState(false)
+  
+  return (
+    <motion.div
+      layout
+      onClick={() => setIsExpanded(!isExpanded)}
+      style={{
+        width: isExpanded ? 400 : 100,
+        height: isExpanded ? 300 : 100,
+        background: "#0070f3",
+        borderRadius: 20
+      }}
+    />
+  )
+}
+```
+
+Motion automatically detects layout changes and smoothly animates between states.
+
+## What Gets Animated
+
+The `layout` prop animates:
+
+- **Position** (`top`, `left`, `right`, `bottom`)
+- **Size** (`width`, `height`)
+- **Transform** (scale, rotate)
+- **Border radius** (with scale correction)
+- **Box shadow** (with scale correction)
+
+## Layout Transition
+
+Control the layout animation timing:
+
+```jsx
+<motion.div
+  layout
+  transition={{
+    layout: { duration: 0.3, ease: "easeOut" }
+  }}
+/>
+```
+
+Use spring physics for natural motion:
+
+```jsx
+<motion.div
+  layout
+  transition={{
+    layout: { 
+      type: "spring",
+      stiffness: 300,
+      damping: 30
+    }
+  }}
+/>
+```
+
+## Layout ID (Shared Layout)
+
+Animate elements between different components:
+
+```jsx
+import { useState } from "react"
+import { motion } from "motion/react"
+
+export function SharedLayoutExample() {
+  const [selected, setSelected] = useState(null)
+  
+  return (
+    <div>
+      {/* Grid of items */}
+      {items.map(item => (
+        <motion.div
+          key={item.id}
+          layoutId={item.id}
+          onClick={() => setSelected(item.id)}
+        >
+          {item.title}
+        </motion.div>
+      ))}
+      
+      {/* Expanded view */}
+      {selected && (
+        <motion.div
+          layoutId={selected}
+          onClick={() => setSelected(null)}
+        >
+          Expanded content
+        </motion.div>
+      )}
+    </div>
+  )
+}
+```
+
+Elements with the same `layoutId` animate smoothly between positions.
+
+## Scale Correction
+
+Motion automatically corrects child scaling. From the real example `Layout-rotate.tsx:17-34`:
+
+```jsx
+import { useState } from "react"
+import { motion } from "motion/react"
+
+export function RotatingLayout() {
+  const [isOn, setIsOn] = useState(false)
+  
+  return (
+    <motion.div
+      layout
+      transition={{ duration: 1 }}
+      style={{
+        width: isOn ? 400 : 100,
+        height: isOn ? 400 : 100
+      }}
+      animate={{
+        rotate: isOn ? 45 : 10,
+        borderRadius: isOn ? 0 : 50
+      }}
+      onClick={() => setIsOn(!isOn)}
+    >
+      <motion.div
+        layout
+        style={{
+          width: isOn ? 100 : 50,
+          height: isOn ? 100 : 50
+        }}
+        animate={{
+          rotate: isOn ? 0 : 45,
+          borderRadius: isOn ? 20 : 0
+        }}
+      />
+    </motion.div>
+  )
+}
+```
+
+Child elements maintain their visual appearance during parent scale changes.
+
+## Layout Groups
+
+Coordinate animations across multiple elements:
+
+```jsx
+import { motion, LayoutGroup } from "motion/react"
+
+export function TabGroup() {
+  const [selected, setSelected] = useState(0)
+  
+  return (
+    <LayoutGroup>
+      <div style={{ display: "flex" }">
+        {tabs.map((tab, i) => (
+          <div key={i} onClick={() => setSelected(i)">
+            {tab}
+            {selected === i && (
+              <motion.div
+                layoutId="underline"
+                style={{
+                  height: 2,
+                  background: "#0070f3"
+                }}
+              />
+            )}
+          </div>
+        ))}
+      </div>
+    </LayoutGroup>
+  )
+}
+```
+
+## Layout Position
+
+Animate only position changes:
+
+```jsx
+<motion.div layout="position" />
+```
+
+## Layout Size
+
+Animate only size changes:
+
+```jsx
+<motion.div layout="size" />
+```
+
+## Preserve Aspect Ratio
+
+For elements with `layout`, child `img` and `video` elements maintain aspect ratio:
+
+```jsx
+<motion.div layout>
+  <img src="photo.jpg" />  {/* Aspect ratio preserved */}
+</motion.div>
+```
+
+## Real-World Examples
+
+### Accordion
+
+```jsx
+import { useState } from "react"
+import { motion, AnimatePresence } from "motion/react"
+
+export function Accordion({ items }) {
+  const [expanded, setExpanded] = useState(null)
+  
+  return (
+    <div>
+      {items.map(item => (
+        <motion.div key={item.id} layout>
+          <motion.button
+            layout
+            onClick={() => setExpanded(expanded === item.id ? null : item.id)}
+          >
+            {item.title}
+          </motion.button>
+          
+          <AnimatePresence>
+            {expanded === item.id && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ layout: { duration: 0.3 } }}
+              >
+                {item.content}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      ))}
+    </div>
+  )
+}
+```
+
+### Image Gallery Modal
+
+```jsx
+import { useState } from "react"
+import { motion, AnimatePresence } from "motion/react"
+
+export function Gallery({ images }) {
+  const [selected, setSelected] = useState(null)
+  
+  return (
+    <>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }">
+        {images.map(image => (
+          <motion.img
+            key={image.id}
+            layoutId={image.id}
+            src={image.thumbnail}
+            onClick={() => setSelected(image)}
+            style={{ cursor: "pointer", borderRadius: 8 }}
+          />
+        ))}
+      </div>
+      
+      <AnimatePresence>
+        {selected && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setSelected(null)}
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.8)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center"
+            }}
+          >
+            <motion.img
+              layoutId={selected.id}
+              src={selected.full}
+              style={{ maxWidth: "90%", maxHeight: "90%" }}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  )
+}
+```
+
+### List Reordering
+
+```jsx
+import { useState } from "react"
+import { motion, Reorder } from "motion/react"
+
+export function ReorderList() {
+  const [items, setItems] = useState([1, 2, 3, 4, 5])
+  
+  return (
+    <Reorder.Group values={items} onReorder={setItems">
+      {items.map(item => (
+        <Reorder.Item key={item} value={item">
+          <motion.div
+            layout
+            style={{
+              padding: 20,
+              margin: 10,
+              background: "white",
+              borderRadius: 8,
+              cursor: "grab"
+            }}
+            whileDrag={{ cursor: "grabbing" }}
+          >
+            Item {item}
+          </motion.div>
+        </Reorder.Item>
+      ))}
+    </Reorder.Group>
+  )
+}
+```
+
+## Instant Transitions
+
+Skip layout animations temporarily:
+
+```jsx
+import { motion, useInstantTransition } from "motion/react"
+
+export function InstantUpdate() {
+  const [state, setState] = useState(false)
+  const startTransition = useInstantTransition()
+  
+  const updateWithoutAnimation = () => {
+    startTransition(() => setState(!state))
+  }
+  
+  return (
+    <motion.div layout onClick={updateWithoutAnimation} />
+  )
+}
+```
+
+## Performance
+
+Layout animations use the FLIP technique:
+
+1. **First**: Measure initial position
+2. **Last**: Measure final position
+3. **Invert**: Apply transform to appear in initial position
+4. **Play**: Animate transform back to 0
+
+This allows animating `width`/`height` using transforms, which are GPU-accelerated.
+
+### Optimizations
+
+From the codebase, Motion includes:
+
+- **Projection caching** - Reuses measurements when possible
+- **Selective updates** - Only updates affected elements
+- **Transform-based animation** - Uses GPU-accelerated properties
+
+## Debugging
+
+Visualize layout animations:
+
+```jsx
+import { MotionConfig } from "motion/react"
+
+<MotionConfig transition={{ layout: { duration: 2 } }">
+  <App />
+</MotionConfig>
+```
+
+Slow down all layout animations to see what's happening.
+
+## Common Issues
+
+### Jittery Animations
+
+**Problem**: Layout animation stutters or jumps.
+
+**Solution**: Ensure all animating ancestors have `layout` prop:
+
+```jsx
+<motion.div layout>
+  <motion.div layout>  {/* ✅ Both have layout */}
+    Content
+  </motion.div>
+</motion.div>
+```
+
+### Conflicting Animations
+
+**Problem**: Manual animations conflict with layout.
+
+**Solution**: Use layout-aware APIs:
+
+```jsx
+// ❌ Conflicts
+<motion.div layout animate={{ width: 200 }} />
+
+// ✅ Works together
+<motion.div layout animate={{ opacity: 1 }} />
+```
+
+### Border Radius Distortion
+
+**Problem**: Border radius looks wrong during scale.
+
+**Solution**: Motion automatically corrects this. Ensure `layout` is on the element with `borderRadius`.
+
+## Tips
+
+<Tip>
+  **Add `layout` to all ancestors** - For smooth animations, any element between animating elements should have `layout`.
+</Tip>
+
+<Tip>
+  **Use `layoutId` for cross-component animations** - Elements with matching `layoutId` will morph between each other.
+</Tip>
+
+<Tip>
+  **Combine with exit animations** - Use `AnimatePresence` for entering/exiting layout animations.
+</Tip>
+
+<Warning>
+  **Avoid layout thrashing** - Don't change layout on every frame (e.g., in `onScroll`). Use transforms instead.
+</Warning>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Spring Animations" icon="wave-pulse" href="/guides/spring-animations">
+    Use springs for layout transitions
+  </Card>
+  <Card title="Performance" icon="gauge-high" href="/guides/performance">
+    Optimize layout animations
+  </Card>
+  <Card title="Drag Interactions" icon="hand" href="/guides/drag-interactions">
+    Combine with drag gestures
+  </Card>
+  <Card title="Scroll Animations" icon="arrows-up-down" href="/guides/scroll-animations">
+    Trigger layout changes on scroll
+  </Card>
+</CardGroup>

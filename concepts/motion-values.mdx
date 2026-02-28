@@ -1,0 +1,290 @@
+---
+title: Motion Values
+description: Understand Motion Values for reactive, high-performance animations that bypass React's render cycle
+---
+
+Motion Values are the foundation of Motion's animation system. They track the state and velocity of animated values without triggering React re-renders, enabling high-performance reactive animations.
+
+## Creating Motion Values
+
+Use the `useMotionValue` hook to create a Motion Value:
+
+```jsx
+import { motion, useMotionValue } from "framer-motion"
+
+function Component() {
+  const x = useMotionValue(0)
+  
+  return <motion.div style={{ x }} />
+}
+```
+
+The Motion Value starts at `0` and can be updated without causing a re-render.
+
+## Setting Values
+
+Update a Motion Value directly with `.set()`:
+
+```jsx
+function Component() {
+  const x = useMotionValue(0)
+  
+  const handleClick = () => {
+    x.set(100) // Updates immediately, no re-render
+  }
+  
+  return (
+    <motion.div 
+      style={{ x }}
+      onClick={handleClick}
+    />
+  )
+}
+```
+
+This bypasses React's render cycle, making it perfect for high-frequency updates like dragging or scroll interactions.
+
+## Getting Values
+
+Retrieve the current value with `.get()`:
+
+```jsx
+const currentX = x.get() // Returns current value
+```
+
+## Transforming Values
+
+The `useTransform` hook creates derived Motion Values:
+
+```jsx
+import { useMotionValue, useTransform } from "framer-motion"
+
+function Component() {
+  const x = useMotionValue(0)
+  
+  // Map x from one range to another
+  const opacity = useTransform(x, [-200, -100, 100, 200], [0, 1, 1, 0])
+  
+  return <motion.div style={{ x, opacity }} />
+}
+```
+
+When `x` changes:
+- Between `-200` and `-100`: opacity transitions from `0` to `1`
+- Between `-100` and `100`: opacity stays at `1`
+- Between `100` and `200`: opacity transitions from `1` to `0`
+
+### Custom Transform Functions
+
+Pass a function for custom transformations:
+
+```jsx
+const y = useTransform(x, (value) => value * 2)
+```
+
+### Multiple Input Values
+
+Combine multiple Motion Values:
+
+```jsx
+const x = useMotionValue(0)
+const y = useMotionValue(0)
+const z = useTransform([x, y], ([latestX, latestY]) => latestX * latestY)
+```
+
+### Transform to Multiple Outputs
+
+Create multiple derived values from a single input:
+
+```jsx
+const x = useMotionValue(0)
+const { opacity, scale } = useTransform(x, [0, 100], {
+  opacity: [0, 1],
+  scale: [0.5, 1]
+})
+
+return <motion.div style={{ opacity, scale, x }} />
+```
+
+## Spring Values
+
+The `useSpring` hook creates a Motion Value that animates with spring physics:
+
+```jsx
+import { useMotionValue, useSpring } from "framer-motion"
+
+function Component() {
+  const x = useMotionValue(0)
+  const smoothX = useSpring(x, { 
+    stiffness: 300, 
+    damping: 28,
+    restDelta: 0.00001 
+  })
+  
+  return <motion.div style={{ x: smoothX }} />
+}
+```
+
+When `x` changes, `smoothX` springs smoothly to the new value instead of updating instantly.
+
+### Practical Example
+
+Here's a drag interaction with smooth spring follow:
+
+```jsx
+import { motion, useMotionValue, useSpring, useTransform } from "framer-motion"
+
+function DragExample() {
+  const dragX = useMotionValue(0)
+  const dragY = useMotionValue(0)
+  
+  // Convert to percentage strings
+  const dragXPX = useTransform(dragX, (v) => `${v}%`)
+  const dragYPX = useTransform(dragY, (v) => `${v}%`)
+  
+  // Apply spring physics
+  const x = useSpring(dragXPX, { stiffness: 300, damping: 28 })
+  const y = useSpring(dragYPX, { stiffness: 300, damping: 28 })
+  
+  return (
+    <motion.div
+      drag
+      dragMomentum={false}
+      _dragX={dragX}
+      _dragY={dragY}
+      style={{ width: 100, height: 100, background: "white", x, y }}
+    />
+  )
+}
+```
+
+## Motion Value Events
+
+Listen to Motion Value changes with `useMotionValueEvent`:
+
+```jsx
+import { useMotionValue, useMotionValueEvent } from "framer-motion"
+
+function Component() {
+  const x = useMotionValue(0)
+  
+  useMotionValueEvent(x, "change", (latest) => {
+    console.log("x changed to:", latest)
+  })
+  
+  return <motion.div style={{ x }} />
+}
+```
+
+Available events:
+- `change`: Fires when the value changes
+- `animationStart`: Animation begins
+- `animationComplete`: Animation finishes
+- `animationCancel`: Animation is cancelled
+
+## SVG Path Animation
+
+Motion Values work seamlessly with SVG properties:
+
+```jsx
+import { motion, useMotionValue, useTransform } from "framer-motion"
+
+function SVGExample() {
+  const r = useMotionValue(40)
+  const fill = useTransform(r, [40, 100], ["#00f", "#f00"])
+  
+  return (
+    <svg width="250" height="250" viewBox="0 0 250 250">
+      <motion.circle
+        cx={125}
+        cy={125}
+        r={r}
+        fill={fill}
+        animate={{ r: 100 }}
+        transition={{ duration: 3 }}
+      />
+    </svg>
+  )
+}
+```
+
+## Motion Templates
+
+Combine multiple Motion Values into template strings:
+
+```jsx
+import { useMotionValue, useMotionTemplate } from "framer-motion"
+
+function Component() {
+  const x = useMotionValue(0)
+  const y = useMotionValue(0)
+  
+  const transform = useMotionTemplate`translateX(${x}px) translateY(${y}px)`
+  
+  return <motion.div style={{ transform }} />
+}
+```
+
+## Velocity Tracking
+
+Track the velocity of a Motion Value:
+
+```jsx
+import { useMotionValue, useVelocity } from "framer-motion"
+
+function Component() {
+  const x = useMotionValue(0)
+  const xVelocity = useVelocity(x)
+  
+  useMotionValueEvent(xVelocity, "change", (latest) => {
+    console.log("Velocity:", latest, "px/s")
+  })
+  
+  return <motion.div drag="x" style={{ x }} />
+}
+```
+
+## Performance Benefits
+
+Motion Values offer significant performance advantages:
+
+1. **No re-renders**: Updates don't trigger React's render cycle
+2. **Direct DOM updates**: Values write directly to the DOM
+3. **Automatic optimization**: GPU acceleration when available
+4. **Efficient transforms**: Chained transforms calculate only once per frame
+
+<Warning>
+While Motion Values are powerful, they exist outside React's state management. Don't use them when you need the value for conditional rendering or other React features.
+</Warning>
+
+## When to Use Motion Values
+
+Use Motion Values for:
+- High-frequency updates (scroll, drag, pointer tracking)
+- Derived/computed animation values
+- Performance-critical animations
+- Animations that don't affect component logic
+
+Use regular state for:
+- Values used in conditional rendering
+- Values that affect component structure
+- Values shared with other non-animated components
+
+## API Reference
+
+For complete API details, see:
+- [useMotionValue](/api/use-motion-value)
+- [useTransform](/api/use-transform)
+- [useSpring](/api/use-spring)
+- [useVelocity](/api/use-velocity)
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Animation Controls" href="/concepts/animation-controls" icon="sliders">
+    Control animations imperatively
+  </Card>
+  <Card title="Scroll Animations" href="/guides/scroll-animations" icon="arrows-up-down">
+    Use Motion Values with scroll
+  </Card>
+</CardGroup>

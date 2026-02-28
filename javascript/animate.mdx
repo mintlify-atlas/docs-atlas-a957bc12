@@ -1,0 +1,488 @@
+---
+title: animate()
+description: Animate elements, values, and objects with Motion's core animation function
+---
+
+The `animate()` function is Motion's primary animation interface for vanilla JavaScript. It can animate DOM elements, motion values, and arbitrary objects.
+
+## Function Signatures
+
+### Animate Elements
+
+```typescript
+animate(
+  element: Element | string,
+  keyframes: DOMKeyframesDefinition,
+  options?: AnimationOptions
+): AnimationPlaybackControls
+```
+
+### Animate Values
+
+```typescript
+animate(
+  value: number | MotionValue<number>,
+  keyframes: number | number[],
+  options?: ValueAnimationTransition<number>
+): AnimationPlaybackControls
+
+animate(
+  value: string | MotionValue<string>,
+  keyframes: string | string[],
+  options?: ValueAnimationTransition<string>
+): AnimationPlaybackControls
+```
+
+### Animate Objects
+
+```typescript
+animate<T>(
+  object: T | T[],
+  keyframes: ObjectTarget<T>,
+  options?: AnimationOptions
+): AnimationPlaybackControls
+```
+
+### Animate Sequences
+
+```typescript
+animate(
+  sequence: AnimationSequence,
+  options?: SequenceOptions
+): AnimationPlaybackControls
+```
+
+## Basic Usage
+
+### Element Animation
+
+```javascript
+import { animate } from "motion"
+
+// Animate by selector
+animate("#box", { x: 100 })
+
+// Animate by element reference
+const element = document.querySelector(".box")
+animate(element, { x: 100, opacity: 0.5 })
+
+// Animate multiple elements
+animate(".box", { y: 50 })
+```
+
+### Value Animation
+
+```javascript
+import { animate, motionValue } from "motion"
+
+// Animate a number
+const progress = motionValue(0)
+progress.on("change", (latest) => {
+  console.log(`Progress: ${latest}%`)
+})
+
+animate(progress, 100, { duration: 2 })
+
+// Animate a primitive value
+animate(0, 100, {
+  onUpdate: (latest) => console.log(latest)
+})
+```
+
+### Object Animation
+
+```javascript
+const circle = { x: 0, y: 0, radius: 10 }
+
+animate(circle, {
+  x: 100,
+  y: 50,
+  radius: 50
+}, {
+  duration: 1,
+  onUpdate: () => {
+    drawCircle(circle.x, circle.y, circle.radius)
+  }
+})
+```
+
+## Keyframes
+
+### Single Values
+
+```javascript
+// Animate to a single value
+animate(element, { x: 100 })
+```
+
+### Keyframe Arrays
+
+```javascript
+// Animate through multiple values
+animate(element, {
+  x: [0, 100, 50, 100],
+  opacity: [1, 0.5, 0.5, 1]
+})
+```
+
+### Wildcard Values
+
+```javascript
+// Use null to maintain current value
+animate(element, {
+  x: [null, 100] // From current position to 100
+})
+```
+
+## Animation Options
+
+### Duration and Easing
+
+```javascript
+animate(element, { x: 100 }, {
+  duration: 1.5,        // seconds
+  ease: "easeInOut"     // easing function
+})
+
+// Custom cubic bezier
+animate(element, { x: 100 }, {
+  duration: 1,
+  ease: [0.17, 0.67, 0.83, 0.67]
+})
+
+// Per-property easing
+animate(element, {
+  x: [0, 100],
+  opacity: [1, 0]
+}, {
+  ease: ["easeIn", "easeOut"]
+})
+```
+
+### Spring Animations
+
+```javascript
+import { animate, spring } from "motion"
+
+// Duration-based spring
+animate(element, { x: 100 }, {
+  type: spring,
+  duration: 0.5,
+  bounce: 0.25
+})
+
+// Physics-based spring
+animate(element, { x: 100 }, {
+  type: spring,
+  stiffness: 200,
+  damping: 20,
+  mass: 1
+})
+
+// Visual duration for easier tweaking
+animate(element, { x: 100 }, {
+  type: spring,
+  visualDuration: 0.4,
+  bounce: 0.3
+})
+```
+
+### Delays
+
+```javascript
+// Simple delay
+animate(element, { x: 100 }, {
+  delay: 0.5 // seconds
+})
+
+// Stagger for multiple elements
+import { stagger } from "motion"
+
+animate(".box", { y: 100 }, {
+  delay: stagger(0.1) // 0.1s between each
+})
+
+// Stagger from last to first
+animate(".box", { y: 100 }, {
+  delay: stagger(0.1, { from: "last" })
+})
+
+// Stagger from center
+animate(".box", { y: 100 }, {
+  delay: stagger(0.05, { from: "center" })
+})
+```
+
+### Repeat
+
+```javascript
+// Repeat 3 times
+animate(element, { rotate: 360 }, {
+  repeat: 3,
+  duration: 1
+})
+
+// Loop infinitely
+animate(element, { rotate: 360 }, {
+  repeat: Infinity,
+  duration: 2
+})
+
+// Reverse on repeat
+animate(element, { x: 100 }, {
+  repeat: Infinity,
+  repeatType: "reverse", // "loop" | "reverse" | "mirror"
+  repeatDelay: 0.5
+})
+```
+
+## Lifecycle Callbacks
+
+```javascript
+animate(element, { x: 100 }, {
+  onUpdate: (latest) => {
+    console.log("Current value:", latest)
+  },
+  onPlay: () => {
+    console.log("Animation started")
+  },
+  onComplete: () => {
+    console.log("Animation completed")
+  },
+  onRepeat: () => {
+    console.log("Animation repeated")
+  },
+  onStop: () => {
+    console.log("Animation stopped")
+  }
+})
+```
+
+## Return Value: AnimationPlaybackControls
+
+```typescript
+interface AnimationPlaybackControls {
+  // Playback methods
+  play(): void
+  pause(): void
+  stop(): void
+  cancel(): void
+  complete(): void
+  
+  // Properties
+  time: number              // Current time in seconds
+  speed: number             // Playback speed (1 = normal)
+  duration: number          // Total duration in seconds
+  iterationDuration: number // Duration including delay
+  startTime: number | null  // Start time in milliseconds
+  state: AnimationPlayState // "idle" | "running" | "paused" | "finished"
+  
+  // Promise interface
+  finished: Promise<void>
+  then(onResolve: () => void, onReject?: () => void): Promise<void>
+  
+  // Timeline attachment (advanced)
+  attachTimeline(timeline: TimelineWithFallback): () => void
+}
+```
+
+## Playback Control Examples
+
+### Play/Pause
+
+```javascript
+const animation = animate(element, { x: 100 }, {
+  duration: 2
+})
+
+// Pause after 1 second
+setTimeout(() => animation.pause(), 1000)
+
+// Resume after another second
+setTimeout(() => animation.play(), 2000)
+```
+
+### Speed Control
+
+```javascript
+const animation = animate(element, { rotate: 360 }, {
+  repeat: Infinity,
+  duration: 2
+})
+
+// Double speed
+animation.speed = 2
+
+// Reverse
+animation.speed = -1
+
+// Slow motion
+animation.speed = 0.5
+```
+
+### Time Scrubbing
+
+```javascript
+const animation = animate(element, { x: 100 }, {
+  duration: 2
+})
+
+animation.pause()
+animation.time = 1 // Jump to 1 second
+```
+
+### Stop vs Cancel vs Complete
+
+```javascript
+const animation = animate(element, { x: 100 })
+
+// Stop: Halts animation at current position
+animation.stop()
+
+// Cancel: Halts and reverts to initial state
+animation.cancel()
+
+// Complete: Jumps to final state
+animation.complete()
+```
+
+## Async/Await
+
+```javascript
+// Wait for animation to complete
+await animate(element, { x: 100 })
+console.log("Animation finished")
+
+// Chain animations
+await animate(element, { x: 100 })
+await animate(element, { y: 100 })
+await animate(element, { scale: 2 })
+
+// Parallel animations
+const [anim1, anim2] = await Promise.all([
+  animate(element1, { x: 100 }),
+  animate(element2, { y: 100 })
+])
+```
+
+## Animatable Properties
+
+### Transform Properties (GPU-accelerated)
+
+```javascript
+animate(element, {
+  x: 100,              // translateX in px
+  y: 50,               // translateY in px
+  z: 0,                // translateZ in px
+  scale: 1.5,          // uniform scale
+  scaleX: 2,
+  scaleY: 0.5,
+  scaleZ: 1,
+  rotate: 45,          // degrees
+  rotateX: 180,
+  rotateY: 90,
+  rotateZ: 45,
+  skewX: 10,
+  skewY: 5,
+  perspective: 1000,
+  transformOrigin: "center center"
+})
+```
+
+### CSS Properties
+
+```javascript
+animate(element, {
+  opacity: 0.5,
+  backgroundColor: "#ff0000",
+  color: "rgb(0, 255, 0)",
+  width: "200px",
+  height: "100px",
+  borderRadius: "50%",
+  margin: "20px",
+  padding: "10px"
+})
+```
+
+### CSS Variables
+
+```javascript
+animate(element, {
+  "--my-color": "#ff0000",
+  "--spacing": "20px"
+})
+```
+
+## Advanced Usage
+
+### Scoped Animations
+
+```javascript
+import { createScopedAnimate } from "motion"
+
+const container = document.querySelector(".container")
+const scopedAnimate = createScopedAnimate({ scope: container })
+
+// Only animates elements within container
+scopedAnimate(".box", { x: 100 })
+```
+
+### Reduced Motion
+
+```javascript
+import { createScopedAnimate } from "motion"
+
+const animate = createScopedAnimate({
+  reduceMotion: true // Respects prefers-reduced-motion
+})
+```
+
+## Performance Tips
+
+1. **Prefer transform properties** - `x`, `y`, `scale`, `rotate` are GPU-accelerated
+2. **Avoid layout properties** - Properties like `width`, `height` trigger layout
+3. **Use will-change** - Motion automatically applies `will-change` optimization
+4. **Batch DOM reads/writes** - Motion handles this automatically
+
+## Examples
+
+### Hover Animation
+
+```javascript
+const button = document.querySelector(".button")
+
+button.addEventListener("mouseenter", () => {
+  animate(button, { scale: 1.1 }, { duration: 0.2 })
+})
+
+button.addEventListener("mouseleave", () => {
+  animate(button, { scale: 1 }, { duration: 0.2 })
+})
+```
+
+### Loading Spinner
+
+```javascript
+const spinner = document.querySelector(".spinner")
+
+animate(spinner, { rotate: 360 }, {
+  duration: 1,
+  repeat: Infinity,
+  ease: "linear"
+})
+```
+
+### Entrance Animation
+
+```javascript
+document.querySelectorAll(".card").forEach((card, i) => {
+  animate(card, {
+    opacity: [0, 1],
+    y: [50, 0]
+  }, {
+    delay: i * 0.1,
+    duration: 0.5,
+    ease: "easeOut"
+  })
+})
+```

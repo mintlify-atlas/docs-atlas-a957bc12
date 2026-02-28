@@ -1,0 +1,383 @@
+---
+title: interpolate()
+description: Low-level function to create interpolators between value ranges
+---
+
+## Overview
+
+The `interpolate()` function creates an interpolator function that maps values from an input range to an output range. It's a lower-level utility that powers the `transform()` function and `useTransform()` hook.
+
+## Import
+
+```jsx
+import { interpolate } from "motion"
+```
+
+## Signature
+
+```typescript
+interpolate<T>(
+  input: number[],
+  output: T[],
+  options?: InterpolateOptions<T>
+): (v: number) => T
+```
+
+## Parameters
+
+<ParamField path="input" type="number[]" required>
+  A linear series of numbers defining the input range. Must be the same length as the output range.
+</ParamField>
+
+<ParamField path="output" type="T[]" required>
+  A series of values defining the output range. Can be:
+  - Numbers
+  - Colors (hex, rgb, rgba, hsl, hsla)
+  - Strings with embedded numbers
+  - Complex strings with multiple values
+  - Objects and arrays (with the same structure)
+</ParamField>
+
+<ParamField path="options" type="InterpolateOptions<T>">
+  Optional configuration object
+</ParamField>
+
+## Options
+
+```typescript
+interface InterpolateOptions<T> {
+  clamp?: boolean
+  ease?: EasingFunction | EasingFunction[]
+  mixer?: MixerFactory<T>
+}
+```
+
+<ParamField path="clamp" type="boolean" default="true">
+  Clamp output values to within the defined output range. Set to `false` to allow extrapolation.
+</ParamField>
+
+<ParamField path="ease" type="EasingFunction or EasingFunction[]">
+  Easing function(s) to apply during interpolation. If array, must be one item shorter than the ranges.
+</ParamField>
+
+<ParamField path="mixer" type="MixerFactory<T>">
+  Custom mixer function for interpolating between output values.
+</ParamField>
+
+## Return Value
+
+<ResponseField name="interpolator" type="(v: number) => T">
+  A function that takes an input value and returns the corresponding interpolated output value.
+</ResponseField>
+
+## Examples
+
+### Basic Interpolation
+
+Create a simple number interpolator:
+
+```jsx
+import { interpolate } from "motion"
+
+const opacityInterpolator = interpolate(
+  [0, 100],
+  [0, 1]
+)
+
+opacityInterpolator(0)    // 0
+opacityInterpolator(50)   // 0.5
+opacityInterpolator(100)  // 1
+```
+
+### Color Interpolation
+
+Interpolate between colors:
+
+```jsx
+import { interpolate } from "motion"
+
+const colorInterpolator = interpolate(
+  [0, 100],
+  ["#ff0000", "#0000ff"]
+)
+
+colorInterpolator(0)    // "rgba(255, 0, 0, 1)"
+colorInterpolator(50)   // "rgba(128, 0, 128, 1)"
+colorInterpolator(100)  // "rgba(0, 0, 255, 1)"
+```
+
+### Multi-Stop Interpolation
+
+Create interpolators with multiple breakpoints:
+
+```jsx
+import { interpolate } from "motion"
+
+const scaleInterpolator = interpolate(
+  [0, 50, 100],
+  [0.5, 1, 0.5]
+)
+
+scaleInterpolator(0)    // 0.5
+scaleInterpolator(25)   // 0.75
+scaleInterpolator(50)   // 1
+scaleInterpolator(75)   // 0.75
+scaleInterpolator(100)  // 0.5
+```
+
+### With Easing
+
+Apply easing functions:
+
+```jsx
+import { interpolate } from "motion"
+
+const easedInterpolator = interpolate(
+  [0, 100],
+  [0, 100],
+  {
+    ease: (t) => t * t // Quadratic ease-in
+  }
+)
+
+easedInterpolator(50)  // 25 (not 50, due to easing)
+```
+
+### Per-Segment Easing
+
+Apply different easing to each segment:
+
+```jsx
+import { interpolate } from "motion"
+
+const multiEaseInterpolator = interpolate(
+  [0, 50, 100],
+  [0, 100, 0],
+  {
+    ease: [
+      (t) => t * t,                    // Ease in
+      (t) => 1 - Math.pow(1 - t, 2)   // Ease out
+    ]
+  }
+)
+```
+
+### Without Clamping
+
+Allow values outside the defined range:
+
+```jsx
+import { interpolate } from "motion"
+
+const extrapolatingInterpolator = interpolate(
+  [0, 100],
+  [0, 1],
+  { clamp: false }
+)
+
+extrapolatingInterpolator(-50)   // -0.5 (extrapolated)
+extrapolatingInterpolator(150)   // 1.5 (extrapolated)
+```
+
+### String with Units
+
+Interpolate strings containing numbers:
+
+```jsx
+import { interpolate } from "motion"
+
+const paddingInterpolator = interpolate(
+  [0, 100],
+  ["0px", "50px"]
+)
+
+paddingInterpolator(50)  // "25px"
+```
+
+### Complex Strings
+
+Interpolate complex CSS values:
+
+```jsx
+import { interpolate } from "motion"
+
+const shadowInterpolator = interpolate(
+  [0, 100],
+  [
+    "0px 0px 0px rgba(0, 0, 0, 0)",
+    "10px 10px 20px rgba(0, 0, 0, 0.5)"
+  ]
+)
+
+const shadow = shadowInterpolator(50)
+// "5px 5px 10px rgba(0, 0, 0, 0.25)"
+```
+
+## Supported Value Types
+
+<AccordionGroup>
+  <Accordion title="Numbers">
+    Basic numeric interpolation:
+    ```jsx
+    interpolate([0, 100], [0, 1])
+    ```
+  </Accordion>
+
+  <Accordion title="Colors">
+    Supports multiple color formats:
+    - Hex: `"#ff0000"`, `"#f00"`
+    - RGB: `"rgb(255, 0, 0)"`
+    - RGBA: `"rgba(255, 0, 0, 1)"`
+    - HSL: `"hsl(0, 100%, 50%)"`
+    - HSLA: `"hsla(0, 100%, 50%, 1)"`
+  </Accordion>
+
+  <Accordion title="Strings with numbers">
+    Automatically extracts and interpolates numbers:
+    ```jsx
+    interpolate([0, 100], ["0px", "100px"])
+    interpolate([0, 100], ["0deg", "360deg"])
+    ```
+  </Accordion>
+
+  <Accordion title="Complex values">
+    Interpolates all numbers in complex strings:
+    ```jsx
+    interpolate(
+      [0, 100],
+      [
+        "translate(0px, 0px) scale(1)",
+        "translate(100px, 50px) scale(1.5)"
+      ]
+    )
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Behavior Details
+
+### Range Direction
+
+If the input range is descending (highest to lowest), both ranges are automatically reversed:
+
+```jsx
+const interpolator = interpolate(
+  [100, 0],  // Descending
+  [0, 1]
+)
+
+// Internally reversed to: [0, 100] → [1, 0]
+interpolator(100)  // 0
+interpolator(0)    // 1
+```
+
+### Single Value
+
+If only one input/output pair is provided, returns a constant function:
+
+```jsx
+const constant = interpolate([0], [100])
+constant(0)     // 100
+constant(1000)  // 100
+```
+
+### Identical Values
+
+If all output values are identical, returns the last value:
+
+```jsx
+const same = interpolate([0, 100], [42, 42])
+same(50)  // 42
+```
+
+### Zero Delta Range
+
+If input values are identical, special handling applies:
+
+```jsx
+const zeroDelta = interpolate([50, 50], [0, 1])
+zeroDelta(49)  // 0 (before range)
+zeroDelta(50)  // 1 (at or after range)
+```
+
+## Performance
+
+<Note>
+  The `interpolate()` function creates the interpolator once and can be called repeatedly with minimal overhead. Interpolators are optimized for performance.
+</Note>
+
+### Optimization Tips
+
+<AccordionGroup>
+  <Accordion title="Create once, use many times">
+    Create interpolators outside render loops or animation frames:
+    ```jsx
+    // Good: Create once
+    const interpolator = interpolate([0, 100], [0, 1])
+    
+    // Use repeatedly
+    for (let i = 0; i < 100; i++) {
+      const value = interpolator(i)
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Avoid complex mixers in hot paths">
+    Custom mixer functions run frequently. Keep them lightweight:
+    ```jsx
+    // Avoid expensive operations in mixers
+    const mixer = (from, to) => (v) => {
+      // Keep this fast!
+      return from + (to - from) * v
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Prefer built-in mixers">
+    The default mixers for numbers, colors, and strings are highly optimized. Only use custom mixers when necessary.
+  </Accordion>
+</AccordionGroup>
+
+## API Reference
+
+### MixerFactory Type
+
+```typescript
+type Mixer<T> = (v: number) => T
+
+type MixerFactory<T> = (from: T, to: T) => Mixer<T>
+```
+
+Custom mixer functions receive two values from the output range and return a function that interpolates between them:
+
+```jsx
+const customMixer: MixerFactory<number> = (from, to) => {
+  return (progress) => {
+    // progress is 0-1 for the segment from `from` to `to`
+    return from + (to - from) * progress
+  }
+}
+```
+
+## Differences from transform()
+
+| Feature | interpolate() | transform() |
+|---------|---------------|-------------|
+| **Returns** | Interpolator function | Value or function |
+| **Immediate mode** | No | Yes |
+| **Usage** | Lower-level | Higher-level |
+| **Typical use** | Internal/advanced | Public API |
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="transform" href="/api/transform" icon="arrow-right-arrow-left">
+    Higher-level transformation function
+  </Card>
+  <Card title="useTransform" href="/api/use-transform" icon="wave-pulse">
+    Transform motion values in React
+  </Card>
+  <Card title="mix" href="/api/mix" icon="blender">
+    Mix two values
+  </Card>
+</CardGroup>

@@ -1,0 +1,371 @@
+---
+title: MotionProps
+description: Type definitions for motion component props
+---
+
+## Overview
+
+The `MotionProps` interface defines all props available on `motion` components. It extends `MotionNodeOptions` and adds support for the `style` prop with `MotionValue` support.
+
+## Import
+
+```typescript
+import type { MotionProps } from "motion/react"
+```
+
+## Type Definition
+
+```typescript
+interface MotionProps extends MotionNodeOptions {
+  style?: MotionStyle
+  children?: React.ReactNode | MotionValue<number> | MotionValue<string>
+}
+```
+
+## Properties
+
+### style
+
+<ParamField path="style" type="MotionStyle">
+  Enhanced style prop that accepts `MotionValue`s and separate transform values.
+</ParamField>
+
+```typescript
+interface MotionStyle extends MotionCSS, MotionTransform, MotionSVGProps {}
+```
+
+**Supports:**
+- All CSS properties
+- Separate transform properties (`x`, `y`, `scale`, `rotate`, etc.)
+- SVG-specific properties
+- `MotionValue` instances for any property
+- CSS variables
+
+### children
+
+<ParamField path="children" type="React.ReactNode | MotionValue<number> or MotionValue<string>">
+  Standard React children or a `MotionValue` that resolves to text content.
+</ParamField>
+
+## MotionStyle Types
+
+### MotionCSS
+
+All standard CSS properties with `MotionValue` support:
+
+```typescript
+type MotionCSS = MakeMotion<
+  Omit<CSSProperties, "rotate" | "scale" | "perspective" | "x" | "y" | "z">
+>
+```
+
+**Example:**
+```jsx
+<motion.div
+  style={{
+    opacity: motionValue,  // MotionValue<number>
+    backgroundColor: "red", // string
+    width: 100             // number
+  }}
+/>
+```
+
+### MotionTransform
+
+Transform properties as individual style properties:
+
+```typescript
+interface TransformProperties {
+  x?: string | number
+  y?: string | number
+  z?: string | number
+  translateX?: string | number
+  translateY?: string | number
+  translateZ?: string | number
+  rotate?: string | number
+  rotateX?: string | number
+  rotateY?: string | number
+  rotateZ?: string | number
+  scale?: number
+  scaleX?: number
+  scaleY?: number
+  scaleZ?: number
+  skew?: string | number
+  skewX?: string | number
+  skewY?: string | number
+  originX?: string | number
+  originY?: string | number
+  originZ?: string | number
+  perspective?: number
+  transformPerspective?: number
+}
+```
+
+**Example:**
+```jsx
+<motion.div
+  style={{
+    x: 100,
+    rotate: 45,
+    scale: 1.2
+  }}
+/>
+```
+
+### SVG Properties
+
+SVG-specific animatable properties:
+
+```typescript
+interface SVGPathProperties {
+  pathLength?: number
+  pathOffset?: number
+  pathSpacing?: number
+}
+```
+
+**Example:**
+```jsx
+<motion.path
+  style={{
+    pathLength: motionValue
+  }}
+/>
+```
+
+## MotionNodeOptions
+
+`MotionProps` extends all options from `MotionNodeOptions`, which includes:
+
+### Animation Props
+
+<ResponseField name="initial" type="VariantLabels | TargetAndTransition or boolean">
+  Initial animation state
+</ResponseField>
+
+<ResponseField name="animate" type="VariantLabels | TargetAndTransition or AnimationControls">
+  Target animation state
+</ResponseField>
+
+<ResponseField name="exit" type="VariantLabels or TargetAndTransition">
+  Exit animation state
+</ResponseField>
+
+<ResponseField name="variants" type="Variants">
+  Named animation variants
+</ResponseField>
+
+<ResponseField name="transition" type="Transition">
+  Default transition configuration
+</ResponseField>
+
+### Gesture Props
+
+<ResponseField name="whileHover" type="VariantLabels or TargetAndTransition">
+  Animation during hover
+</ResponseField>
+
+<ResponseField name="whileTap" type="VariantLabels or TargetAndTransition">
+  Animation while pressed
+</ResponseField>
+
+<ResponseField name="whileFocus" type="VariantLabels or TargetAndTransition">
+  Animation while focused
+</ResponseField>
+
+<ResponseField name="whileDrag" type="VariantLabels or TargetAndTransition">
+  Animation while dragging
+</ResponseField>
+
+<ResponseField name="whileInView" type="VariantLabels or TargetAndTransition">
+  Animation while in viewport
+</ResponseField>
+
+### Drag Props
+
+<ResponseField name="drag" type="boolean | x or y">
+  Enable dragging
+</ResponseField>
+
+<ResponseField name="dragConstraints" type="Partial<BoundingBox> or RefObject<Element>">
+  Drag constraints
+</ResponseField>
+
+<ResponseField name="dragElastic" type="number or Partial<BoundingBox>">
+  Drag elasticity
+</ResponseField>
+
+<ResponseField name="dragMomentum" type="boolean">
+  Enable drag momentum
+</ResponseField>
+
+### Layout Props
+
+<ResponseField name="layout" type="boolean | position | size or preserve-aspect">
+  Enable layout animations
+</ResponseField>
+
+<ResponseField name="layoutId" type="string">
+  Shared layout ID
+</ResponseField>
+
+### Event Handlers
+
+<ResponseField name="onUpdate" type="(latest: ResolvedValues) => void">
+  Called on every frame during animation
+</ResponseField>
+
+<ResponseField name="onAnimationStart" type="(definition: AnimationDefinition) => void">
+  Called when animation starts
+</ResponseField>
+
+<ResponseField name="onAnimationComplete" type="(definition: AnimationDefinition) => void">
+  Called when animation completes
+</ResponseField>
+
+See the full list in the [MotionNodeOptions reference](/api/types/motion-node-options).
+
+## Examples
+
+### Basic Props
+
+```tsx
+import { motion, MotionProps } from "motion/react"
+
+const props: MotionProps = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.5 }
+}
+
+function Component() {
+  return <motion.div {...props}>Content</motion.div>
+}
+```
+
+### With MotionValues
+
+```tsx
+import { motion, useMotionValue, MotionProps } from "motion/react"
+
+function Component() {
+  const x = useMotionValue(0)
+  const opacity = useMotionValue(1)
+  
+  const props: MotionProps = {
+    style: { x, opacity }
+  }
+  
+  return <motion.div {...props}>Drag me</motion.div>
+}
+```
+
+### Typed Component Props
+
+Extend `MotionProps` for custom components:
+
+```tsx
+import { motion, MotionProps } from "motion/react"
+import { HTMLAttributes } from "react"
+
+interface CardProps extends MotionProps, HTMLAttributes<HTMLDivElement> {
+  title: string
+  featured?: boolean
+}
+
+function Card({ title, featured, ...motionProps }: CardProps) {
+  return (
+    <motion.div
+      {...motionProps}
+      className={featured ? "featured" : undefined}
+    >
+      <h2>{title}</h2>
+    </motion.div>
+  )
+}
+
+// Usage
+<Card
+  title="Hello"
+  initial={{ opacity: 0 }}
+  animate={{ opacity: 1 }}
+  whileHover={{ scale: 1.05 }}
+/>
+```
+
+### Generic Motion Component
+
+Create reusable motion components:
+
+```tsx
+import { motion, MotionProps } from "motion/react"
+
+function FadeIn(props: MotionProps) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      {...props}
+    />
+  )
+}
+```
+
+### With Variants
+
+```tsx
+import { motion, MotionProps, Variants } from "motion/react"
+
+const variants: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 }
+}
+
+const props: MotionProps = {
+  variants,
+  initial: "hidden",
+  animate: "visible"
+}
+
+function Component() {
+  return <motion.div {...props}>Content</motion.div>
+}
+```
+
+## Helper Types
+
+### MakeMotion
+
+Converts property types to accept `MotionValue`s:
+
+```typescript
+type MakeMotion<T> = {
+  [K in keyof T]: T[K] | MotionValue<T[K]>
+}
+```
+
+### MotionValue Types
+
+```typescript
+type MotionValueNumber = MotionValue<number>
+type MotionValueString = MotionValue<string>
+type AnyMotionValue = MotionValueNumber | MotionValueString | MotionValue<any>
+```
+
+## Related Types
+
+<CardGroup cols={2}>
+  <Card title="Transition" href="/api/types/transition" icon="clock">
+    Transition configuration types
+  </Card>
+  <Card title="Variants" href="/api/types/variants" icon="layer-group">
+    Variant definition types
+  </Card>
+  <Card title="AnimationOptions" href="/api/types/animation-options" icon="sliders">
+    Animation option types
+  </Card>
+  <Card title="MotionValue" href="/api/motion-value" icon="wave-pulse">
+    MotionValue API reference
+  </Card>
+</CardGroup>

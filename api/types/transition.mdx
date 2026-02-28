@@ -1,0 +1,441 @@
+---
+title: Transition
+description: Type definitions for animation transition configuration
+---
+
+## Overview
+
+The `Transition` type defines how animations move from one state to another. It controls timing, easing, animation type, and orchestration of child animations.
+
+## Import
+
+```typescript
+import type { Transition } from "motion/react"
+```
+
+## Type Definition
+
+```typescript
+type Transition<V = any> =
+  | ValueAnimationTransition<V>
+  | TransitionWithValueOverrides<V>
+```
+
+A transition can be either a single configuration applied to all properties, or an object with per-property overrides.
+
+## Core Properties
+
+### Animation Type
+
+<ParamField path="type" type="AnimationGeneratorType">
+  The type of animation:
+  - `"tween"`: Duration-based with easing (default)
+  - `"spring"`: Physics or duration-based spring
+  - `"inertia"`: Decay animation
+  - `"keyframes"`: Multi-keyframe animation  
+  - `false`: Instant (no animation)
+</ParamField>
+
+### Timing
+
+<ParamField path="duration" type="number">
+  Duration in seconds:
+  - Default: `0.3` for tween
+  - Default: `0.8` for keyframes
+  - Springs use calculated duration or custom `duration`
+</ParamField>
+
+<ParamField path="delay" type="number">
+  Delay before animation starts, in seconds. Default: `0`
+</ParamField>
+
+<ParamField path="elapsed" type="number">
+  Time already elapsed in the animation, in seconds. Default: `0`
+</ParamField>
+
+### Easing
+
+<ParamField path="ease" type="Easing or Easing[]">
+  Easing function or array of easing functions. Can be:
+  - Named easing: `"linear"`, `"easeIn"`, `"easeOut"`, `"easeInOut"`, `"circIn"`, etc.
+  - Cubic bezier: `[0.17, 0.67, 0.83, 0.67]`
+  - Custom function: `(t: number) => number`
+  - Array for keyframes (one per segment)
+</ParamField>
+
+<ParamField path="times" type="number[]">
+  Array of 0-1 values defining when each keyframe occurs. Must match keyframe count.
+</ParamField>
+
+## Spring Properties
+
+### Physics-Based
+
+<ParamField path="stiffness" type="number" default="100">
+  Spring stiffness. Higher values create more sudden movement.
+</ParamField>
+
+<ParamField path="damping" type="number" default="10">
+  Strength of opposing force. Set to `0` for infinite oscillation.
+</ParamField>
+
+<ParamField path="mass" type="number" default="1">
+  Mass of the moving object. Higher values result in more lethargic movement.
+</ParamField>
+
+### Duration-Based
+
+<ParamField path="duration" type="number" default="0.3">
+  For springs, this overrides physics calculations to create a duration-based spring.
+</ParamField>
+
+<ParamField path="bounce" type="number" default="0.25">
+  Bounciness from 0-1. Only used with duration-based springs. Higher = more bouncy.
+</ParamField>
+
+<ParamField path="visualDuration" type="number">
+  Time for the bulk of the transition, with "bouncy" part happening after.
+</ParamField>
+
+### Velocity
+
+<ParamField path="velocity" type="number" default="0">
+  Initial velocity of the animation.
+</ParamField>
+
+<ParamField path="restSpeed" type="number" default="0.01">
+  End animation if absolute speed drops below this value.
+</ParamField>
+
+<ParamField path="restDelta" type="number" default="0.01">
+  End animation if distance is below this value.
+</ParamField>
+
+## Inertia Properties
+
+<ParamField path="power" type="number" default="0.8">
+  Higher power equals further target.
+</ParamField>
+
+<ParamField path="timeConstant" type="number" default="700">
+  Adjusts duration of deceleration.
+</ParamField>
+
+<ParamField path="modifyTarget" type="(v: number) => number">
+  Modify automatically-calculated target. Useful for snapping to grid.
+</ParamField>
+
+<ParamField path="min" type="number">
+  Minimum constraint. Value will bounce against this.
+</ParamField>
+
+<ParamField path="max" type="number">
+  Maximum constraint. Value will bounce against this.
+</ParamField>
+
+<ParamField path="bounceStiffness" type="number" default="500">
+  Stiffness of bounce spring when hitting min/max.
+</ParamField>
+
+<ParamField path="bounceDamping" type="number" default="10">
+  Damping of bounce spring when hitting min/max.
+</ParamField>
+
+## Repeat Properties
+
+<ParamField path="repeat" type="number" default="0">
+  Number of times to repeat. Set to `Infinity` for perpetual repeating.
+</ParamField>
+
+<ParamField path="repeatType" type="string" default="loop">
+  How to repeat:
+  - `"loop"`: Restart from beginning
+  - `"reverse"`: Alternate between forward and backward
+  - `"mirror"`: Switch from and to values
+</ParamField>
+
+<ParamField path="repeatDelay" type="number" default="0">
+  Duration to wait between repeats, in seconds.
+</ParamField>
+
+## Orchestration Properties
+
+<ParamField path="when" type="false | beforeChildren or afterChildren" default="false">
+  Relationship to children:
+  - `false`: Animate with children simultaneously
+  - `"beforeChildren"`: Finish before children start
+  - `"afterChildren"`: Start after children finish
+</ParamField>
+
+<ParamField path="delayChildren" type="number or DynamicOption<number>" default="0">
+  Delay before children animations start, in seconds.
+</ParamField>
+
+<ParamField path="staggerChildren" type="number" default="0">
+  Stagger delay between each child, in seconds. ⚠️ Deprecated: use `delayChildren: stagger(interval)`
+</ParamField>
+
+<ParamField path="staggerDirection" type="1 or -1" default="1">
+  Direction of stagger. ⚠️ Deprecated: use `delayChildren: stagger(interval, { from: 'last' })`
+</ParamField>
+
+## Lifecycle Callbacks
+
+<ParamField path="onUpdate" type="(latest: V) => void">
+  Called every animation frame with the latest animated value.
+</ParamField>
+
+<ParamField path="onPlay" type="() => void">
+  Called when animation starts playing.
+</ParamField>
+
+<ParamField path="onComplete" type="() => void">
+  Called when animation completes.
+</ParamField>
+
+<ParamField path="onRepeat" type="() => void">
+  Called each time animation repeats.
+</ParamField>
+
+<ParamField path="onStop" type="() => void">
+  Called when animation is manually stopped.
+</ParamField>
+
+## Per-Property Overrides
+
+Define different transitions for specific properties:
+
+```typescript
+interface TransitionWithValueOverrides<V> extends ValueAnimationTransition<V> {
+  // Per-property transitions
+  [propertyName: string]: ValueTransition | undefined
+  
+  // Special overrides
+  default?: ValueTransition
+  layout?: ValueTransition
+}
+```
+
+<ParamField path="default" type="ValueTransition">
+  Default transition for properties without specific overrides.
+</ParamField>
+
+<ParamField path="layout" type="ValueTransition">
+  Transition specifically for layout animations.
+</ParamField>
+
+## Examples
+
+### Basic Tween
+
+```jsx
+const transition: Transition = {
+  duration: 0.5,
+  ease: "easeOut"
+}
+
+<motion.div
+  animate={{ x: 100 }}
+  transition={transition}
+/>
+```
+
+### Spring Animation
+
+```jsx
+const transition: Transition = {
+  type: "spring",
+  stiffness: 300,
+  damping: 20
+}
+
+<motion.div
+  animate={{ scale: 1.2 }}
+  transition={transition}
+/>
+```
+
+### Duration-Based Spring
+
+```jsx
+const transition: Transition = {
+  type: "spring",
+  duration: 0.6,
+  bounce: 0.3
+}
+```
+
+### Keyframe Animation
+
+```jsx
+const transition: Transition = {
+  duration: 2,
+  ease: ["easeIn", "easeOut", "easeIn"],
+  times: [0, 0.5, 1]
+}
+
+<motion.div
+  animate={{ rotate: [0, 90, 0] }}
+  transition={transition}
+/>
+```
+
+### Infinite Loop
+
+```jsx
+const transition: Transition = {
+  repeat: Infinity,
+  repeatType: "reverse",
+  duration: 2
+}
+
+<motion.div
+  animate={{ rotate: 360 }}
+  transition={transition}
+/>
+```
+
+### Per-Property Transitions
+
+```jsx
+const transition: Transition = {
+  default: { duration: 0.3 },
+  opacity: { 
+    duration: 0.5,
+    ease: "easeOut" 
+  },
+  scale: {
+    type: "spring",
+    stiffness: 300,
+    damping: 20
+  }
+}
+
+<motion.div
+  animate={{ opacity: 1, scale: 1.2, x: 100 }}
+  transition={transition}
+/>
+```
+
+### Orchestrating Children
+
+```jsx
+const transition: Transition = {
+  when: "beforeChildren",
+  delayChildren: 0.3,
+  staggerChildren: 0.1
+}
+
+<motion.div
+  animate="visible"
+  transition={transition}
+>
+  <motion.div />  {/* Delays 0.3s */}
+  <motion.div />  {/* Delays 0.4s */}
+  <motion.div />  {/* Delays 0.5s */}
+</motion.div>
+```
+
+### Layout Animation
+
+```jsx
+const transition: Transition = {
+  layout: {
+    type: "spring",
+    stiffness: 400,
+    damping: 30
+  },
+  opacity: {
+    duration: 0.2
+  }
+}
+
+<motion.div
+  layout
+  transition={transition}
+/>
+```
+
+### With Callbacks
+
+```jsx
+const transition: Transition = {
+  duration: 1,
+  onUpdate: (latest) => {
+    console.log("Current value:", latest)
+  },
+  onComplete: () => {
+    console.log("Animation finished!")
+  }
+}
+```
+
+### Inertia Animation
+
+```jsx
+const transition: Transition = {
+  type: "inertia",
+  velocity: 500,
+  power: 0.8,
+  timeConstant: 700,
+  modifyTarget: (target) => Math.round(target / 100) * 100
+}
+```
+
+## Type Helpers
+
+### ValueAnimationTransition
+
+Base transition type with all options:
+
+```typescript
+interface ValueAnimationTransition<V = any>
+  extends ValueTransition,
+    AnimationPlaybackLifecycles<V> {
+  // All transition properties
+}
+```
+
+### DynamicOption
+
+Create dynamic values based on element index:
+
+```typescript
+type DynamicOption<T> = (index: number, total: number) => T
+
+// Usage
+delayChildren: (i, total) => i * 0.1
+```
+
+## Transition Inheritance
+
+<ParamField path="inherit" type="boolean" default="false">
+  Whether this transition should merge with parent transition (shallow merge, inner keys win).
+</ParamField>
+
+```jsx
+// Parent transition
+<motion.div transition={{ duration: 1 }">
+  {/* Child inherits duration but overrides type */}
+  <motion.div 
+    transition={{ type: "spring", inherit: true }}
+  />
+</motion.div>
+```
+
+## Related Types
+
+<CardGroup cols={2}>
+  <Card title="AnimationOptions" href="/api/types/animation-options" icon="sliders">
+    Full animation options reference
+  </Card>
+  <Card title="Variants" href="/api/types/variants" icon="layer-group">
+    Variant definitions
+  </Card>
+  <Card title="Easing" href="/api/types/easing" icon="chart-line">
+    Easing function types
+  </Card>
+  <Card title="Spring Guide" href="/guides/spring-animations" icon="wave-pulse">
+    Spring animation guide
+  </Card>
+</CardGroup>

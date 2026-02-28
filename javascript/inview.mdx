@@ -1,0 +1,475 @@
+---
+title: inView()
+description: Detect when elements enter and exit the viewport with precision control
+---
+
+The `inView()` function triggers callbacks when elements enter or leave the viewport using the Intersection Observer API. Perfect for lazy loading, triggering animations, and tracking visibility.
+
+## Function Signature
+
+```typescript
+inView(
+  element: Element | string,
+  onStart: (element: Element, entry: IntersectionObserverEntry) => void | ViewChangeHandler,
+  options?: InViewOptions
+): () => void
+```
+
+### Parameters
+
+#### element
+
+Target element(s) to observe:
+- CSS selector string (e.g., `".box"`, `"#element"`)
+- Element reference
+- Multiple elements via selector
+
+#### onStart
+
+Callback when element enters viewport:
+
+```typescript
+(
+  element: Element,
+  entry: IntersectionObserverEntry
+) => void | ViewChangeHandler
+```
+
+Optionally return a cleanup function that runs when element exits:
+
+```typescript
+type ViewChangeHandler = (entry: IntersectionObserverEntry) => void
+```
+
+#### InViewOptions
+
+```typescript
+interface InViewOptions {
+  root?: Element | Document     // Viewport element (default: viewport)
+  margin?: string              // Margin around root
+  amount?: "some" | "all" | number  // How much must be visible
+}
+```
+
+### Return Value
+
+Returns a cleanup function to disconnect the observer:
+
+```javascript
+const cleanup = inView(".box", (element) => {/* ... */})
+
+// Later, stop observing
+cleanup()
+```
+
+## Basic Usage
+
+### Simple Detection
+
+```javascript
+import { inView } from "motion"
+
+inView(".box", (element) => {
+  console.log("Element entered viewport:", element)
+})
+```
+
+### Enter and Exit
+
+```javascript
+inView(".box", (element) => {
+  console.log("Entered:", element)
+  
+  // Return function for exit
+  return () => {
+    console.log("Exited:", element)
+  }
+})
+```
+
+### With Animation
+
+```javascript
+import { inView, animate } from "motion"
+
+inView(".box", (element) => {
+  animate(element, { opacity: 1, y: 0 })
+})
+```
+
+### Reversible Animation
+
+```javascript
+inView(".card", (element) => {
+  // Animate in
+  const animation = animate(element, {
+    opacity: [0, 1],
+    y: [50, 0]
+  }, {
+    duration: 0.5
+  })
+  
+  // Animate out on exit
+  return () => {
+    animate(element, {
+      opacity: 0,
+      y: 50
+    })
+  }
+})
+```
+
+## Options
+
+### Visibility Amount
+
+```javascript
+// Trigger when any part is visible
+inView(".box", onEnter, {
+  amount: "some" // default
+})
+
+// Trigger only when fully visible
+inView(".box", onEnter, {
+  amount: "all"
+})
+
+// Trigger when 50% is visible
+inView(".box", onEnter, {
+  amount: 0.5
+})
+
+// Trigger when 75% is visible
+inView(".box", onEnter, {
+  amount: 0.75
+})
+```
+
+### Margin (Offset)
+
+Trigger before element enters viewport:
+
+```javascript
+// Trigger 100px before entering
+inView(".box", onEnter, {
+  margin: "0px 0px -100px 0px" // top right bottom left
+})
+
+// Trigger 200px before
+inView(".box", onEnter, {
+  margin: "0px 0px -200px 0px"
+})
+
+// Using percentage
+inView(".box", onEnter, {
+  margin: "0% 0% -10% 0%"
+})
+
+// Shorthand
+inView(".box", onEnter, {
+  margin: "-100px" // All sides
+})
+```
+
+### Custom Root
+
+Observe within a scrollable container:
+
+```javascript
+const container = document.querySelector(".scroll-container")
+
+inView(".box", onEnter, {
+  root: container
+})
+```
+
+## Examples
+
+### Lazy Load Images
+
+```javascript
+inView("img[data-src]", (img) => {
+  img.src = img.dataset.src
+  img.removeAttribute("data-src")
+})
+```
+
+### Stagger Entrance
+
+```javascript
+import { inView, animate, stagger } from "motion"
+
+inView(".card-container", (container) => {
+  const cards = container.querySelectorAll(".card")
+  
+  animate(cards, {
+    opacity: [0, 1],
+    y: [50, 0]
+  }, {
+    delay: stagger(0.1),
+    duration: 0.5
+  })
+})
+```
+
+### Count Up Animation
+
+```javascript
+inView(".counter", (counter) => {
+  const target = parseInt(counter.dataset.target)
+  const value = { number: 0 }
+  
+  animate(value, { number: target }, {
+    duration: 2,
+    onUpdate: () => {
+      counter.textContent = Math.round(value.number)
+    }
+  })
+})
+```
+
+### Fade In on Scroll
+
+```javascript
+document.querySelectorAll(".fade-in").forEach(element => {
+  // Set initial state
+  element.style.opacity = 0
+  element.style.transform = "translateY(20px)"
+})
+
+inView(".fade-in", (element) => {
+  animate(element, {
+    opacity: 1,
+    y: 0
+  }, {
+    duration: 0.6,
+    ease: "easeOut"
+  })
+})
+```
+
+### Video Auto-Play
+
+```javascript
+inView("video", (video) => {
+  video.play()
+  
+  return () => {
+    video.pause()
+  }
+})
+```
+
+### Slide In Sections
+
+```javascript
+inView(".section", (section, entry) => {
+  const direction = entry.boundingClientRect.top > 0 ? 1 : -1
+  
+  animate(section, {
+    opacity: [0, 1],
+    x: [direction * 100, 0]
+  }, {
+    duration: 0.8
+  })
+})
+```
+
+### Progress Indicator
+
+```javascript
+inView(".article", (article) => {
+  const indicator = document.querySelector(".progress")
+  
+  scroll((progress) => {
+    indicator.style.width = `${progress * 100}%`
+  }, {
+    target: article
+  })
+  
+  return () => {
+    indicator.style.width = "0%"
+  }
+})
+```
+
+### Parallax Background
+
+```javascript
+import { inView, scroll, animate } from "motion"
+
+inView(".parallax-section", (section) => {
+  const bg = section.querySelector(".bg")
+  
+  const animation = animate(bg, { y: [-50, 50] }, { duration: 1 })
+  
+  const cleanup = scroll(animation, {
+    target: section,
+    offset: ["start end", "end start"]
+  })
+  
+  return cleanup
+})
+```
+
+### Class Toggle
+
+```javascript
+inView(".box", (element) => {
+  element.classList.add("is-visible")
+  
+  return () => {
+    element.classList.remove("is-visible")
+  }
+})
+```
+
+### One-Time Animation
+
+```javascript
+// Only animate once, don't observe exit
+inView(".hero", (element) => {
+  animate(element, {
+    opacity: [0, 1],
+    scale: [0.8, 1]
+  }, {
+    duration: 1
+  })
+  
+  // Don't return a function = won't observe exit
+})
+```
+
+### Multiple Elements
+
+```javascript
+inView(".card", (card, entry) => {
+  // Each card gets its own callback
+  animate(card, { 
+    opacity: [0, 1],
+    rotateY: [90, 0] 
+  })
+  
+  console.log("Intersection ratio:", entry.intersectionRatio)
+})
+```
+
+### Trigger Early
+
+```javascript
+// Trigger animation 200px before element enters
+inView(".section", (section) => {
+  animate(section.querySelectorAll(".item"), {
+    opacity: [0, 1],
+    y: [30, 0]
+  }, {
+    delay: stagger(0.05)
+  })
+}, {
+  margin: "0px 0px -200px 0px"
+})
+```
+
+### Track Visibility State
+
+```javascript
+const visibleElements = new Set()
+
+inView(".box", (element) => {
+  visibleElements.add(element)
+  console.log(`${visibleElements.size} elements visible`)
+  
+  return () => {
+    visibleElements.delete(element)
+    console.log(`${visibleElements.size} elements visible`)
+  }
+})
+```
+
+## Advanced Usage
+
+### With IntersectionObserverEntry
+
+```javascript
+inView(".box", (element, entry) => {
+  console.log({
+    target: entry.target,
+    isIntersecting: entry.isIntersecting,
+    intersectionRatio: entry.intersectionRatio,
+    boundingClientRect: entry.boundingClientRect,
+    intersectionRect: entry.intersectionRect,
+    rootBounds: entry.rootBounds,
+    time: entry.time
+  })
+})
+```
+
+### Conditional Animations
+
+```javascript
+inView(".box", (element, entry) => {
+  if (entry.intersectionRatio > 0.5) {
+    animate(element, { scale: 1.2 })
+  } else {
+    animate(element, { scale: 1 })
+  }
+})
+```
+
+### Cleanup
+
+```javascript
+const cleanup = inView(".box", onEnter)
+
+// Stop observing all elements
+window.addEventListener("beforeunload", cleanup)
+```
+
+## Performance Tips
+
+1. **Set initial styles** in CSS to avoid layout shift
+2. **Use `margin`** to trigger animations slightly before viewport entry
+3. **Batch animations** when possible using selectors
+4. **Clean up observers** when components unmount
+5. **Use `amount: "all"`** sparingly - can cause jank on large elements
+
+## Margin Format
+
+The `margin` option uses CSS margin syntax:
+
+```javascript
+// All sides
+margin: "10px"
+
+// Vertical | Horizontal
+margin: "10px 20px"
+
+// Top | Horizontal | Bottom
+margin: "10px 20px 30px"
+
+// Top | Right | Bottom | Left
+margin: "10px 20px 30px 40px"
+
+// Percentages
+margin: "10%"
+
+// Negative values (trigger early)
+margin: "-100px"
+margin: "0px 0px -200px 0px"
+```
+
+## Browser Support
+
+- Uses native Intersection Observer API
+- Supported in all modern browsers
+- Falls back gracefully in older browsers (no observation)
+- Polyfill available for older browsers if needed
+
+## Comparison with scroll()
+
+| Feature | inView() | scroll() |
+|---------|----------|----------|
+| Purpose | Detect visibility | Link to scroll progress |
+| Trigger | Enter/exit viewport | Continuous scroll updates |
+| Performance | Optimized with IO | RequestAnimationFrame |
+| Use case | Lazy load, trigger | Parallax, progress bars |

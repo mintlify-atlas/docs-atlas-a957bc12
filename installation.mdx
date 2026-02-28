@@ -1,0 +1,185 @@
+---
+title: Installation
+description: Install Motion for React, JavaScript, or Vue
+---
+
+# Installation
+
+Motion is available as separate packages optimized for React, JavaScript, and Vue. Choose the installation method that matches your project.
+
+## React
+
+For React projects, install the `motion` package:
+
+<CodeGroup>
+```bash npm
+npm install motion
+```
+
+```bash yarn
+yarn add motion
+```
+
+```bash pnpm
+pnpm add motion
+```
+</CodeGroup>
+
+### React usage
+
+Import Motion components from `motion/react`:
+
+```jsx
+import { motion } from "motion/react"
+
+function App() {
+    return (
+        <motion.div
+            animate={{ opacity: 1 }}
+            initial={{ opacity: 0 }}
+        >
+            Hello Motion
+        </motion.div>
+    )
+}
+```
+
+<Note>
+Motion supports React 18 and 19. For React 18, you may need to install peer dependencies `react` and `react-dom`.
+</Note>
+
+### React peer dependencies
+
+Motion requires React 18 or higher:
+
+```json
+{
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  }
+}
+```
+
+## JavaScript
+
+For vanilla JavaScript or framework-agnostic projects, use the same `motion` package:
+
+<CodeGroup>
+```bash npm
+npm install motion
+```
+
+```bash yarn
+yarn add motion
+```
+
+```bash pnpm
+pnpm add motion
+```
+</CodeGroup>
+
+### JavaScript usage
+
+Import the `animate` function from `motion`:
+
+```javascript
+import { animate } from "motion"
+
+// Animate an element
+animate("#box", { x: 100 })
+
+// Or use a DOM reference
+const element = document.querySelector(".my-element")
+animate(element, { opacity: 1, x: 100 })
+```
+
+<Tip>
+The JavaScript API uses CSS selectors or DOM elements, making it easy to integrate with any framework or vanilla JavaScript project.
+</Tip>
+
+### Using a CDN
+
+You can also use Motion directly from a CDN:
+
+```html
+<script type="module">
+    import { animate } from "https://cdn.jsdelivr.net/npm/motion@12/+esm"
+    
+    animate("#box", { x: 100 })
+</script>
+```
+
+## Vue
+
+For Vue 3 projects, install the dedicated `motion-v` package:
+
+<CodeGroup>
+```bash npm
+npm install motion-v
+```
+
+```bash yarn
+yarn add motion-v
+```
+
+```bash pnpm
+pnpm add motion-v
+```
+</CodeGroup>
+
+### Vue usage
+
+Import Motion components from `motion-v`:
+
+```vue
+<script setup>
+import { motion } from "motion-v"
+</script>
+
+<template>
+    <motion.div :animate="{ x: 100 }" />
+</template>
+```
+
+## Package exports
+
+Motion provides multiple entry points for different use cases:
+
+### Main exports
+
+- `motion` - Full JavaScript/vanilla API
+- `motion/react` - Full React API with all features
+- `motion/react-client` - Client-only React components (for server-side rendering)
+
+### Optimized bundles
+
+- `motion/mini` - Minimal JavaScript API (~4KB)
+- `motion/react-mini` - Minimal React API (~8KB)
+- `motion/react-m` - Aliased as `m` for smaller component names
+
+<Tip>
+Use the mini bundles when you only need basic animations and want to minimize bundle size.
+</Tip>
+
+## TypeScript support
+
+Motion is written in TypeScript and includes type definitions out of the box. No additional `@types` packages are needed.
+
+```tsx
+import { motion, type MotionProps } from "motion/react"
+
+interface MyComponentProps {
+    animationProps: MotionProps
+}
+
+function MyComponent({ animationProps }: MyComponentProps) {
+    return <motion.div {...animationProps} />
+}
+```
+
+## Next steps
+
+<Card title="Quickstart" icon="bolt" href="/quickstart">
+  Build your first animation in 5 minutes
+</Card>

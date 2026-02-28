@@ -1,0 +1,210 @@
+---
+title: useVelocity
+description: Track the velocity of a MotionValue
+---
+
+## Overview
+
+Creates a `MotionValue` that updates when the velocity of the provided `MotionValue` changes. This is useful for creating effects based on how fast a value is changing.
+
+## Import
+
+```jsx
+import { useVelocity } from "motion/react"
+```
+
+## Signature
+
+```typescript
+function useVelocity(
+  value: MotionValue<number>
+): MotionValue<number>
+```
+
+## Parameters
+
+<ParamField path="value" type="MotionValue<number>" required>
+  The `MotionValue` to track velocity for
+</ParamField>
+
+## Returns
+
+<ResponseField name="MotionValue" type="MotionValue<number>">
+  A `MotionValue` that represents the velocity of the input value in units per second
+</ResponseField>
+
+## Usage
+
+### Basic Velocity Tracking
+
+Track the velocity of a draggable element:
+
+```jsx
+import { motion, useMotionValue, useVelocity } from "motion/react"
+
+export function Component() {
+  const x = useMotionValue(0)
+  const xVelocity = useVelocity(x)
+
+  return (
+    <motion.div
+      style={{ x }}
+      drag="x"
+      onUpdate={() => {
+        console.log("Velocity:", xVelocity.get())
+      }}
+    />
+  )
+}
+```
+
+### Velocity-Based Effects
+
+Apply effects based on movement speed:
+
+```jsx
+import { motion, useMotionValue, useVelocity, useTransform } from "motion/react"
+
+export function Component() {
+  const x = useMotionValue(0)
+  const xVelocity = useVelocity(x)
+  
+  // Scale blur based on velocity
+  const blur = useTransform(
+    xVelocity,
+    [-1000, 0, 1000],
+    [10, 0, 10]
+  )
+
+  return (
+    <motion.div
+      style={{ x, filter: `blur(${blur}px)` }}
+      drag="x"
+    />
+  )
+}
+```
+
+### Velocity Indicator
+
+Visually represent movement speed:
+
+```jsx
+import { motion, useMotionValue, useVelocity, useTransform } from "motion/react"
+
+export function Component() {
+  const x = useMotionValue(0)
+  const xVelocity = useVelocity(x)
+  const scale = useTransform(
+    xVelocity,
+    [-1000, 0, 1000],
+    [1.2, 1, 1.2]
+  )
+
+  return (
+    <motion.div
+      style={{ x, scale }}
+      drag="x"
+    />
+  )
+}
+```
+
+### Tracking Acceleration
+
+Chain velocity trackers to measure acceleration:
+
+```jsx
+import { motion, useMotionValue, useVelocity } from "motion/react"
+
+export function Component() {
+  const x = useMotionValue(0)
+  const xVelocity = useVelocity(x)
+  const xAcceleration = useVelocity(xVelocity)
+
+  return (
+    <motion.div
+      style={{ x }}
+      drag="x"
+      onUpdate={() => {
+        console.log("Acceleration:", xAcceleration.get())
+      }}
+    />
+  )
+}
+```
+
+### Directional Feedback
+
+Provide visual feedback based on direction:
+
+```jsx
+import { motion, useMotionValue, useVelocity, useTransform } from "motion/react"
+
+export function Component() {
+  const x = useMotionValue(0)
+  const xVelocity = useVelocity(x)
+  
+  // Rotate based on direction and speed
+  const rotate = useTransform(
+    xVelocity,
+    [-1000, 0, 1000],
+    [-30, 0, 30]
+  )
+
+  return (
+    <motion.div
+      style={{ x, rotate }}
+      drag="x"
+    />
+  )
+}
+```
+
+### Momentum Scrolling
+
+Create custom momentum effects:
+
+```jsx
+import { motion, useMotionValue, useVelocity } from "motion/react"
+
+export function Component() {
+  const y = useMotionValue(0)
+  const yVelocity = useVelocity(y)
+
+  const handleDragEnd = () => {
+    const velocity = yVelocity.get()
+    // Continue scrolling based on velocity
+    y.set(y.get() + velocity * 0.5)
+  }
+
+  return (
+    <motion.div
+      style={{ y }}
+      drag="y"
+      onDragEnd={handleDragEnd}
+    />
+  )
+}
+```
+
+## How It Works
+
+- Velocity is measured in units per second
+- The velocity tracker automatically updates on every frame when the source value changes
+- Velocity is calculated as the difference between the current and previous frame values
+- Returns `0` when the value hasn't changed or when more than 30ms has passed since the last update
+
+## Notes
+
+- Velocity is measured in units per second (e.g., pixels/second for pixel values)
+- The returned `MotionValue` automatically stops updating when velocity reaches zero
+- Velocity tracking continues while the source value is changing
+- You can chain multiple `useVelocity` calls to track acceleration and higher-order derivatives
+
+## Related
+
+- [useMotionValue](/api/use-motion-value) - Create motion values
+- [useTransform](/api/use-transform) - Transform motion values
+- [useSpring](/api/use-spring) - Add spring physics
+- [MotionValue](/api/motion-value) - MotionValue class API

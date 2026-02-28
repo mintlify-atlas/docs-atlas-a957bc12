@@ -1,0 +1,298 @@
+---
+title: 'scroll()'
+description: 'Function for creating scroll-linked animations'
+icon: 'arrows-up-down'
+---
+
+## Overview
+
+The `scroll()` function creates scroll-linked animations. It can animate elements based on scroll position or link existing animations to scroll progress.
+
+## Import
+
+```tsx
+import { scroll } from 'framer-motion'
+```
+
+## Signature
+
+```tsx
+function scroll(
+  onScroll: OnScroll | AnimationPlaybackControls,
+  options?: ScrollOptions
+): VoidFunction
+
+type OnScroll = OnScrollProgress | OnScrollWithInfo
+type OnScrollProgress = (progress: number) => void
+type OnScrollWithInfo = (progress: number, info: ScrollInfo) => void
+
+interface ScrollOptions {
+  source?: HTMLElement
+  container?: Element
+  target?: Element
+  axis?: "x" | "y"
+  offset?: ScrollOffset
+}
+```
+
+## Parameters
+
+### onScroll (required)
+
+A callback function or animation playback controls to link to scroll.
+
+```tsx
+onScroll: OnScroll | AnimationPlaybackControls
+```
+
+**As a callback:**
+
+```jsx
+scroll((progress) => {
+  console.log('Scroll progress:', progress)
+})
+```
+
+**With scroll info:**
+
+```jsx
+scroll((progress, info) => {
+  console.log('X:', info.x.progress)
+  console.log('Y:', info.y.progress)
+})
+```
+
+**With animation controls:**
+
+```jsx
+import { animate, scroll } from 'framer-motion'
+
+const animation = animate(element, { opacity: [0, 1] })
+scroll(animation)
+```
+
+### container
+
+The scrollable container. Defaults to `document.scrollingElement`.
+
+```tsx
+container?: Element
+```
+
+```jsx
+const container = document.querySelector('.scroll-container')
+scroll((progress) => {
+  // Track container scroll
+}, { container })
+```
+
+### target
+
+The target element to track. When provided, scroll progress is measured relative to this element's position.
+
+```tsx
+target?: Element
+```
+
+```jsx
+const target = document.querySelector('.tracked-element')
+scroll((progress) => {
+  console.log('Element scroll progress:', progress)
+}, { target })
+```
+
+### axis
+
+The scroll axis to track.
+
+```tsx
+axis?: "x" | "y" // default: "y"
+```
+
+```jsx
+scroll((progress) => {
+  console.log('Horizontal scroll:', progress)
+}, { axis: "x" })
+```
+
+### offset
+
+Define when the animation starts and ends during scroll.
+
+```tsx
+type ScrollOffset = Array<Edge | Intersection | ProgressIntersection>
+
+type Edge = string | number
+type Intersection = `${Edge} ${Edge}`
+type ProgressIntersection = [number, number]
+
+// Supported units: "px", "vw", "vh", "%"
+// Named edges: "start", "end", "center"
+```
+
+```jsx
+// Named edges
+scroll(animation, {
+  target: element,
+  offset: ["start end", "end start"]
+})
+
+// Pixel values
+scroll(animation, {
+  offset: ["0px", "500px"]
+})
+
+// Percentage values
+scroll(animation, {
+  offset: ["0%", "100%"]
+})
+
+// Viewport units
+scroll(animation, {
+  offset: ["0vh", "100vh"]
+})
+```
+
+## Return Value
+
+Returns a cleanup function to stop tracking scroll.
+
+```tsx
+VoidFunction
+```
+
+```jsx
+const stopScrollTracking = scroll((progress) => {
+  console.log(progress)
+})
+
+// Later, stop tracking
+stopScrollTracking()
+```
+
+## ScrollInfo Interface
+
+```tsx
+interface ScrollInfo {
+  time: number
+  x: AxisScrollInfo
+  y: AxisScrollInfo
+}
+
+interface AxisScrollInfo {
+  current: number       // Current scroll position in pixels
+  offset: number[]      // Calculated offset values
+  progress: number      // Scroll progress from 0 to 1
+  scrollLength: number  // Total scrollable length
+  velocity: number      // Current scroll velocity
+  targetOffset: number
+  targetLength: number
+  containerLength: number
+}
+```
+
+## Examples
+
+### Basic scroll tracking
+
+```jsx
+import { scroll } from 'framer-motion'
+
+scroll((progress) => {
+  console.log('Page scroll progress:', progress)
+})
+```
+
+### Animate element on scroll
+
+```jsx
+import { animate, scroll } from 'framer-motion'
+
+const element = document.querySelector('.fade-in')
+
+const animation = animate(
+  element,
+  { opacity: [0, 1], y: [100, 0] },
+  { duration: 1 }
+)
+
+scroll(animation, {
+  target: element,
+  offset: ["start end", "end start"]
+})
+```
+
+### Track container scroll
+
+```jsx
+const container = document.querySelector('.container')
+const progressBar = document.querySelector('.progress')
+
+scroll((progress) => {
+  progressBar.style.transform = `scaleX(${progress})`
+}, { container })
+```
+
+### Multiple elements animation
+
+```jsx
+const elements = document.querySelectorAll('.animated')
+
+elements.forEach(element => {
+  const animation = animate(
+    element,
+    { opacity: [0, 1], scale: [0.8, 1] }
+  )
+  
+  scroll(animation, {
+    target: element,
+    offset: ["start 0.9", "start 0.6"]
+  })
+})
+```
+
+### Horizontal scroll animation
+
+```jsx
+const slider = document.querySelector('.horizontal-slider')
+
+scroll((progress, info) => {
+  console.log('Horizontal scroll:', info.x.progress)
+  slider.style.transform = `translateX(-${progress * 100}%)`
+}, {
+  axis: "x",
+  container: document.querySelector('.scroll-container')
+})
+```
+
+### Parallax effect
+
+```jsx
+const background = document.querySelector('.background')
+const foreground = document.querySelector('.foreground')
+
+scroll((progress) => {
+  background.style.transform = `translateY(${progress * 50}%)`
+  foreground.style.transform = `translateY(${progress * -20}%)`
+})
+```
+
+### Scroll-linked rotation
+
+```jsx
+const wheel = document.querySelector('.wheel')
+
+scroll((progress) => {
+  wheel.style.transform = `rotate(${progress * 360}deg)`
+}, {
+  target: wheel,
+  offset: ["start end", "end start"]
+})
+```
+
+## Notes
+
+- The scroll function automatically handles cleanup when the container is removed from the DOM
+- Returns a cleanup function that should be called when you want to stop tracking
+- Uses native scroll timeline API when available for better performance
+- Falls back to requestAnimationFrame-based implementation when scroll timeline is not supported

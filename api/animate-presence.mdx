@@ -1,0 +1,303 @@
+---
+title: AnimatePresence
+description: Animate components when they're removed from the React tree
+---
+
+The `AnimatePresence` component enables exit animations for `motion` components. When a `motion` component is removed from the tree, `AnimatePresence` keeps it rendered until its `exit` animation completes.
+
+## Usage
+
+```jsx
+import { motion, AnimatePresence } from "motion/react"
+import { useState } from "react"
+
+export function App() {
+  const [isVisible, setIsVisible] = useState(true)
+
+  return (
+    <>
+      <button onClick={() => setIsVisible(!isVisible)">
+        Toggle
+      </button>
+      <AnimatePresence>
+        {isVisible && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            I will fade out
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  )
+}
+```
+
+## Multiple Children
+
+When animating multiple children, each must have a unique `key` prop:
+
+```jsx
+<AnimatePresence>
+  {items.map(item => (
+    <motion.div
+      key={item.id}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      {item.name}
+    </motion.div>
+  ))}
+</AnimatePresence>
+```
+
+## Props
+
+<ParamField path="children" type="ReactNode">
+  React children. Any `motion` components with an `exit` prop will animate out when removed.
+
+  ```jsx
+  <AnimatePresence>
+    {isVisible && <motion.div exit={{ opacity: 0 }} />}
+  </AnimatePresence>
+  ```
+</ParamField>
+
+<ParamField path="initial" type="boolean" default="true">
+  By passing `initial={false}`, `AnimatePresence` will disable any initial animations on children that are present when the component first renders.
+
+  ```jsx
+  <AnimatePresence initial={false">
+    {isVisible && (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      />
+    )}
+  </AnimatePresence>
+  ```
+</ParamField>
+
+<ParamField path="mode" type="sync | wait or popLayout" default="sync">
+  Determines how entering and exiting elements are handled:
+  
+  - `"sync"`: Elements animate in and out as soon as they're added/removed (default)
+  - `"wait"`: Only renders one component at a time. Waits for the exiting component to finish before animating the next one in
+  - `"popLayout"`: Exiting elements are "popped" from the page layout, allowing siblings to immediately move to their new positions
+
+  ```jsx
+  // Wait mode - good for page transitions
+  <AnimatePresence mode="wait">
+    <motion.div key={page">
+      {/* Page content */}
+    </motion.div>
+  </AnimatePresence>
+
+  // Pop layout mode - good for lists
+  <AnimatePresence mode="popLayout">
+    {items.map(item => (
+      <motion.div key={item.id} exit={{ opacity: 0 }} />
+    ))}
+  </AnimatePresence>
+  ```
+</ParamField>
+
+<ParamField path="onExitComplete" type="() => void">
+  Fires when all exiting nodes have completed animating out.
+
+  ```jsx
+  <AnimatePresence 
+    onExitComplete={() => console.log('All animations complete')}
+  >
+    {items.map(item => (
+      <motion.div key={item.id} exit={{ opacity: 0 }} />
+    ))}
+  </AnimatePresence>
+  ```
+</ParamField>
+
+<ParamField path="custom" type="any">
+  When a component is removed, there's no longer a chance to update its props. Use `custom` to pass dynamic data to the `exit` animation via variants.
+
+  ```jsx
+  const variants = {
+    exit: (direction: number) => ({
+      x: direction > 0 ? 300 : -300,
+      opacity: 0
+    })
+  }
+
+  <AnimatePresence custom={direction">
+    <motion.div
+      key={page}
+      variants={variants}
+      exit="exit"
+    />
+  </AnimatePresence>
+  ```
+</ParamField>
+
+<ParamField path="presenceAffectsLayout" type="boolean" default="true">
+  Internal prop used in Framer to control whether sibling children should re-render when a child is removed.
+</ParamField>
+
+<ParamField path="propagate" type="boolean" default="false">
+  If `true`, the `AnimatePresence` component will propagate parent exit animations to its children.
+
+  ```jsx
+  <AnimatePresence propagate>
+    {isVisible && (
+      <motion.div exit={{ opacity: 0 }">
+        <motion.div exit={{ scale: 0 }} />
+      </motion.div>
+    )}
+  </AnimatePresence>
+  ```
+</ParamField>
+
+<ParamField path="root" type="HTMLElement or ShadowRoot">
+  Root element for injecting styles when using `mode="popLayout"`. Defaults to `document.head`.
+  
+  Use this for Shadow DOM or other custom contexts.
+
+  ```jsx
+  const shadowRoot = useRef<ShadowRoot>()
+
+  <AnimatePresence mode="popLayout" root={shadowRoot.current">
+    {/* children */}
+  </AnimatePresence>
+  ```
+</ParamField>
+
+## Examples
+
+### List with Staggered Exit
+
+```jsx
+const listVariants = {
+  exit: {
+    transition: {
+      staggerChildren: 0.1,
+      staggerDirection: -1
+    }
+  }
+}
+
+const itemVariants = {
+  exit: {
+    opacity: 0,
+    x: -100
+  }
+}
+
+<AnimatePresence>
+  <motion.ul variants={listVariants} exit="exit">
+    {items.map(item => (
+      <motion.li
+        key={item.id}
+        variants={itemVariants}
+      >
+        {item.name}
+      </motion.li>
+    ))}
+  </motion.ul>
+</AnimatePresence>
+```
+
+### Modal with Backdrop
+
+```jsx
+<AnimatePresence>
+  {isOpen && (
+    <>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0, 0, 0, 0.5)'
+        }}
+      />
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.9, opacity: 0 }}
+        style={{
+          position: 'fixed',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)'
+        }}
+      >
+        Modal content
+      </motion.div>
+    </>
+  )}
+</AnimatePresence>
+```
+
+### Page Transitions
+
+```jsx
+function PageTransition({ children, direction = 1 }) {
+  const variants = {
+    enter: (direction: number) => ({
+      x: direction > 0 ? 300 : -300,
+      opacity: 0
+    }),
+    center: {
+      x: 0,
+      opacity: 1
+    },
+    exit: (direction: number) => ({
+      x: direction < 0 ? 300 : -300,
+      opacity: 0
+    })
+  }
+
+  return (
+    <AnimatePresence mode="wait" custom={direction">
+      <motion.div
+        key={children.key}
+        custom={direction}
+        variants={variants}
+        initial="enter"
+        animate="center"
+        exit="exit"
+        transition={{ duration: 0.3 }}
+      >
+        {children}
+      </motion.div>
+    </AnimatePresence>
+  )
+}
+```
+
+## TypeScript
+
+```typescript
+import { AnimatePresence } from "motion/react"
+import type { AnimatePresenceProps } from "motion/react"
+
+function Component(props: AnimatePresenceProps) {
+  return <AnimatePresence {...props} />
+}
+```
+
+## Notes
+
+- Children must have a unique `key` prop when animating multiple elements
+- Only direct children of `AnimatePresence` will animate out
+- The component being removed must have an `exit` prop defined
+- Multiple `motion` components in a single child will all need to complete their exit animations before unmounting
+
+## Related
+
+- [motion](/api/motion) - Core animation component
+- [exit animation guide](/guides/exit-animations) - Learn more about exit animations

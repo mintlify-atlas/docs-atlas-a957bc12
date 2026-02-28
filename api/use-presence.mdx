@@ -1,0 +1,291 @@
+---
+title: 'usePresence()'
+description: 'Hook for accessing AnimatePresence state'
+icon: 'toggle-on'
+---
+
+## Overview
+
+`usePresence` allows components to access information about whether they're still present in the React tree when used within `AnimatePresence`. This is useful for controlling custom exit animations.
+
+## Import
+
+```tsx
+import { usePresence } from 'framer-motion'
+```
+
+## Signature
+
+```tsx
+function usePresence(subscribe?: boolean): AlwaysPresent | Present | NotPresent
+
+type AlwaysPresent = [true, null]
+type Present = [true]
+type NotPresent = [false, SafeToRemove]
+
+type SafeToRemove = () => void
+```
+
+## Return Values
+
+### Outside AnimatePresence
+
+Returns `[true, null]` when the component is not a child of `AnimatePresence`.
+
+```tsx
+[true, null]
+```
+
+### Present in tree
+
+Returns `[true]` when the component is present in the React tree.
+
+```tsx
+[true]
+```
+
+### Removed from tree
+
+Returns `[false, safeToRemove]` when the component has been removed but AnimatePresence is keeping it mounted.
+
+```tsx
+[false, safeToRemove: () => void]
+```
+
+## Parameters
+
+### subscribe
+
+Whether to subscribe to the AnimatePresence context.
+
+```tsx
+subscribe?: boolean // default: true
+```
+
+```jsx
+const [isPresent, safeToRemove] = usePresence(false)
+```
+
+## Usage
+
+The hook is typically used to delay the removal of a component until a custom animation completes.
+
+```jsx
+import { usePresence } from 'framer-motion'
+import { useEffect } from 'react'
+
+function Component() {
+  const [isPresent, safeToRemove] = usePresence()
+
+  useEffect(() => {
+    if (!isPresent) {
+      // Run custom exit animation
+      setTimeout(safeToRemove, 1000)
+    }
+  }, [isPresent])
+
+  return <div />
+}
+```
+
+## Examples
+
+### Custom exit animation
+
+```jsx
+import { usePresence } from 'framer-motion'
+import { useEffect, useState } from 'react'
+
+function FadeOut({ children }) {
+  const [isPresent, safeToRemove] = usePresence()
+  const [opacity, setOpacity] = useState(1)
+
+  useEffect(() => {
+    if (!isPresent) {
+      // Fade out animation
+      const animation = setInterval(() => {
+        setOpacity(prev => {
+          const next = prev - 0.05
+          if (next <= 0) {
+            clearInterval(animation)
+            safeToRemove()
+            return 0
+          }
+          return next
+        })
+      }, 16)
+
+      return () => clearInterval(animation)
+    }
+  }, [isPresent, safeToRemove])
+
+  return <div style={{ opacity }}>{children}</div>
+}
+
+// Usage
+<AnimatePresence>
+  {isVisible && <FadeOut>Content</FadeOut>}
+</AnimatePresence>
+```
+
+### Delayed removal
+
+```jsx
+function DelayedExit() {
+  const [isPresent, safeToRemove] = usePresence()
+
+  useEffect(() => {
+    if (!isPresent) {
+      const timeout = setTimeout(safeToRemove, 2000)
+      return () => clearTimeout(timeout)
+    }
+  }, [isPresent, safeToRemove])
+
+  return (
+    <div
+      style={{
+        opacity: isPresent ? 1 : 0,
+        transition: 'opacity 0.5s'
+      }}
+    >
+      This will stay for 2 seconds after removal
+    </div>
+  )
+}
+```
+
+### Custom animation library
+
+```jsx
+import { animate } from 'motion'
+
+function CustomAnimation() {
+  const [isPresent, safeToRemove] = usePresence()
+  const ref = useRef(null)
+
+  useEffect(() => {
+    if (!isPresent && ref.current) {
+      animate(
+        ref.current,
+        { opacity: 0, scale: 0.8 },
+        { duration: 0.5 }
+      ).then(safeToRemove)
+    }
+  }, [isPresent, safeToRemove])
+
+  return <div ref={ref}>Content</div>
+}
+```
+
+### Conditional animations
+
+```jsx
+function ConditionalExit({ fast = false }) {
+  const [isPresent, safeToRemove] = usePresence()
+
+  useEffect(() => {
+    if (!isPresent) {
+      const duration = fast ? 200 : 1000
+      setTimeout(safeToRemove, duration)
+    }
+  }, [isPresent, safeToRemove, fast])
+
+  return (
+    <div
+      style={{
+        opacity: isPresent ? 1 : 0,
+        transition: `opacity ${fast ? 0.2 : 1}s`
+      }}
+    >
+      Content
+    </div>
+  )
+}
+```
+
+### Multi-step exit
+
+```jsx
+function MultiStepExit() {
+  const [isPresent, safeToRemove] = usePresence()
+  const [step, setStep] = useState(0)
+
+  useEffect(() => {
+    if (!isPresent) {
+      // Step 1: Scale down
+      setTimeout(() => setStep(1), 0)
+      // Step 2: Fade out
+      setTimeout(() => setStep(2), 300)
+      // Step 3: Remove
+      setTimeout(safeToRemove, 600)
+    }
+  }, [isPresent, safeToRemove])
+
+  return (
+    <div
+      style={{
+        transform: step >= 1 ? 'scale(0.8)' : 'scale(1)',
+        opacity: step >= 2 ? 0 : 1,
+        transition: 'all 0.3s'
+      }}
+    >
+      Multi-step exit animation
+    </div>
+  )
+}
+```
+
+### With Web Animations API
+
+```jsx
+function WebAnimation() {
+  const [isPresent, safeToRemove] = usePresence()
+  const ref = useRef(null)
+
+  useEffect(() => {
+    if (!isPresent && ref.current) {
+      const animation = ref.current.animate(
+        [
+          { opacity: 1, transform: 'translateY(0)' },
+          { opacity: 0, transform: 'translateY(20px)' }
+        ],
+        { duration: 500, easing: 'ease-out' }
+      )
+
+      animation.onfinish = safeToRemove
+    }
+  }, [isPresent, safeToRemove])
+
+  return <div ref={ref}>Content</div>
+}
+```
+
+## Related Hook: useIsPresent
+
+For simpler use cases where you only need to know if the component is present:
+
+```tsx
+import { useIsPresent } from 'framer-motion'
+
+function Component() {
+  const isPresent = useIsPresent()
+
+  useEffect(() => {
+    if (!isPresent) {
+      console.log('Component has been removed')
+    }
+  }, [isPresent])
+
+  return <div />
+}
+```
+
+`useIsPresent` simply returns a boolean and doesn't provide the `safeToRemove` callback. Use this when you don't need to control when the component is actually removed.
+
+## Notes
+
+- Must be used within a child of `AnimatePresence`
+- Call `safeToRemove()` when your exit animation completes
+- Don't call `safeToRemove()` if `isPresent` is `true`
+- The component stays mounted until `safeToRemove()` is called
+- Use `useIsPresent` if you only need to detect presence without controlling removal

@@ -1,0 +1,369 @@
+---
+title: useAnimation()
+description: React hook for creating legacy animation controls (deprecated)
+---
+
+<Warning>
+  This hook is deprecated. Use [useAnimate()](/api/use-animate) for new projects, which provides a more flexible and modern animation API.
+</Warning>
+
+`useAnimation()` is a React hook that creates `LegacyAnimationControls`, which can be used to manually control animations on one or more Motion components.
+
+## Signature
+
+```typescript
+function useAnimation(): LegacyAnimationControls
+```
+
+Alias for `useAnimationControls()`.
+
+## Return Value
+
+<ResponseField name="LegacyAnimationControls" type="object">
+  Animation controller with methods to start, stop, and set animations.
+  
+  <Expandable title="methods">
+    <ResponseField name="start" type="(definition, transitionOverride?) => Promise<any>">
+      Start an animation. See [AnimationControls](/api/animation-controls) for details.
+    </ResponseField>
+    
+    <ResponseField name="set" type="(definition) => void">
+      Instantly set values without animating
+    </ResponseField>
+    
+    <ResponseField name="stop" type="() => void">
+      Stop all animations
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Usage
+
+Pass the returned controls to the `animate` prop of `motion` components:
+
+```jsx
+import { motion, useAnimation } from "motion/react"
+import { useEffect } from "react"
+
+function Component() {
+  const controls = useAnimation()
+  
+  useEffect(() => {
+    controls.start({
+      x: 100,
+      transition: { duration: 0.5 }
+    })
+  }, [])
+  
+  return <motion.div animate={controls} />
+}
+```
+
+## Examples
+
+### Trigger on Event
+
+```jsx
+import { motion, useAnimation } from "motion/react"
+
+function Component() {
+  const controls = useAnimation()
+  
+  return (
+    <>
+      <motion.div animate={controls} />
+      
+      <button
+        onClick={() => controls.start({ scale: 1.2 })}
+      >
+        Animate
+      </button>
+    </>
+  )
+}
+```
+
+### Control Multiple Elements
+
+```jsx
+import { motion, useAnimation } from "motion/react"
+
+function Component() {
+  const controls = useAnimation()
+  
+  return (
+    <>
+      <motion.div animate={controls} className="box-1" />
+      <motion.div animate={controls} className="box-2" />
+      <motion.div animate={controls} className="box-3" />
+      
+      <button
+        onClick={() => controls.start({ 
+          rotate: 180,
+          transition: { duration: 0.5 }
+        })}
+      >
+        Rotate All
+      </button>
+    </>
+  )
+}
+```
+
+### Sequence Animations
+
+```jsx
+import { motion, useAnimation } from "motion/react"
+
+function Component() {
+  const controls = useAnimation()
+  
+  async function sequence() {
+    await controls.start({ x: 100 })
+    await controls.start({ y: 100 })
+    await controls.start({ x: 0, y: 0 })
+  }
+  
+  return (
+    <>
+      <motion.div animate={controls} />
+      <button onClick={sequence}>Run Sequence</button>
+    </>
+  )
+}
+```
+
+### Using Variants
+
+```jsx
+import { motion, useAnimation } from "motion/react"
+
+const variants = {
+  hidden: { 
+    opacity: 0, 
+    y: 50 
+  },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: {
+      duration: 0.5,
+      ease: "easeOut"
+    }
+  }
+}
+
+function Component() {
+  const controls = useAnimation()
+  
+  return (
+    <>
+      <motion.div
+        variants={variants}
+        initial="hidden"
+        animate={controls}
+      />
+      
+      <button onClick={() => controls.start("visible")">
+        Show
+      </button>
+      <button onClick={() => controls.start("hidden")">
+        Hide
+      </button>
+    </>
+  )
+}
+```
+
+### Dynamic Animation Based on State
+
+```jsx
+import { motion, useAnimation } from "motion/react"
+import { useEffect, useState } from "react"
+
+function Component() {
+  const controls = useAnimation()
+  const [isActive, setIsActive] = useState(false)
+  
+  useEffect(() => {
+    if (isActive) {
+      controls.start({
+        scale: 1.2,
+        backgroundColor: "#ff0000"
+      })
+    } else {
+      controls.start({
+        scale: 1,
+        backgroundColor: "#0000ff"
+      })
+    }
+  }, [isActive])
+  
+  return (
+    <>
+      <motion.div animate={controls} />
+      <button onClick={() => setIsActive(!isActive)">
+        Toggle
+      </button>
+    </>
+  )
+}
+```
+
+### Scroll-Triggered Animation
+
+```jsx
+import { motion, useAnimation } from "motion/react"
+import { useEffect } from "react"
+import { useInView } from "motion/react"
+
+function Component() {
+  const controls = useAnimation()
+  const ref = useRef(null)
+  const isInView = useInView(ref)
+  
+  useEffect(() => {
+    if (isInView) {
+      controls.start("visible")
+    }
+  }, [isInView])
+  
+  return (
+    <motion.div
+      ref={ref}
+      animate={controls}
+      initial="hidden"
+      variants={{
+        hidden: { opacity: 0, y: 50 },
+        visible: { opacity: 1, y: 0 }
+      }}
+    />
+  )
+}
+```
+
+## Automatic Cleanup
+
+The hook automatically handles cleanup when the component unmounts. All subscribed animations will be stopped.
+
+## Important Notes
+
+<Note>
+  `controls.start()` and `controls.set()` must be called after the component has mounted. Call them inside `useEffect` or event handlers, not during render.
+</Note>
+
+```jsx
+// ❌ Wrong - called during render
+function Component() {
+  const controls = useAnimation()
+  controls.start({ x: 100 }) // Error!
+  
+  return <motion.div animate={controls} />
+}
+
+// ✅ Correct - called in useEffect
+function Component() {
+  const controls = useAnimation()
+  
+  useEffect(() => {
+    controls.start({ x: 100 })
+  }, [])
+  
+  return <motion.div animate={controls} />
+}
+
+// ✅ Correct - called in event handler
+function Component() {
+  const controls = useAnimation()
+  
+  return (
+    <>
+      <motion.div animate={controls} />
+      <button onClick={() => controls.start({ x: 100 })">
+        Animate
+      </button>
+    </>
+  )
+}
+```
+
+## Type Definition
+
+```typescript
+interface LegacyAnimationControls {
+  start(
+    definition: AnimationDefinition,
+    transitionOverride?: Transition
+  ): Promise<any>
+  
+  set(definition: AnimationDefinition): void
+  
+  stop(): void
+  
+  subscribe(visualElement: VisualElement): () => void
+  
+  mount(): () => void
+}
+
+type AnimationDefinition = 
+  | TargetAndTransition
+  | VariantLabels
+  | TargetResolver
+
+type VariantLabels = string | string[]
+
+type TargetAndTransition = Target & {
+  transition?: Transition
+  transitionEnd?: ResolvedValues
+}
+```
+
+## Migration to useAnimate
+
+For new projects, use the modern `useAnimate()` hook:
+
+<CodeGroup>
+```jsx useAnimation (Old)
+import { motion, useAnimation } from "motion/react"
+import { useEffect } from "react"
+
+function Component() {
+  const controls = useAnimation()
+  
+  useEffect(() => {
+    controls.start({ x: 100 })
+  }, [])
+  
+  return <motion.div animate={controls} />
+}
+```
+
+```jsx useAnimate (New)
+import { useAnimate } from "motion/react"
+import { useEffect } from "react"
+
+function Component() {
+  const [scope, animate] = useAnimate()
+  
+  useEffect(() => {
+    animate(scope.current, { x: 100 })
+  }, [])
+  
+  return <div ref={scope} />
+}
+```
+</CodeGroup>
+
+### Why Migrate?
+
+1. **No wrapper required**: Works with regular HTML elements
+2. **Scoped selectors**: Target child elements easily
+3. **Better sequences**: More intuitive API for complex animations
+4. **Type safety**: Improved TypeScript support
+5. **Modern API**: Aligned with current web standards
+
+## See Also
+
+- [AnimationControls](/api/animation-controls) - Detailed API reference
+- [useAnimate()](/api/use-animate) - Modern alternative
+- [animate()](/api/animate) - Imperative animation function

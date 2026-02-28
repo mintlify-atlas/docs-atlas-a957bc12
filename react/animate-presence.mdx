@@ -1,0 +1,428 @@
+---
+title: AnimatePresence
+description: Exit animations and component lifecycle management
+---
+
+`AnimatePresence` enables exit animations for components being removed from the React tree.
+
+## Basic Usage
+
+Wrap components with `AnimatePresence` and define `exit` animations:
+
+```jsx
+import { AnimatePresence, motion } from "motion"
+import { useState } from "react"
+
+function App() {
+  const [isVisible, setVisible] = useState(true)
+
+  return (
+    <div onClick={() => setVisible(!isVisible)">
+      <AnimatePresence>
+        {isVisible && (
+          <motion.div
+            key="modal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{ width: 100, height: 100, background: "red" }}
+          />
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+```
+
+## Props
+
+### `initial`
+
+Control whether children animate on initial mount:
+
+```jsx
+// Disable initial animations
+<AnimatePresence initial={false">
+  {isVisible && (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    />
+  )}
+</AnimatePresence>
+```
+
+Useful for:
+- Preventing animations on page load
+- Server-side rendering
+- Modals that shouldn't animate on first render
+
+### `mode`
+
+Controls how entering and exiting elements are handled:
+
+#### `"sync"` (default)
+
+Elements animate in and out simultaneously:
+
+```jsx
+<AnimatePresence mode="sync">
+  {show && <motion.div key="content" exit={{ opacity: 0 }} />}
+</AnimatePresence>
+```
+
+#### `"wait"`
+
+Wait for exiting element to finish before animating in the next:
+
+```jsx
+function Slideshow() {
+  const [index, setIndex] = useState(0)
+
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={index}
+        initial={{ opacity: 0, x: 100 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: -100 }}
+        transition={{ duration: 0.5 }}
+      >
+        Slide {index}
+      </motion.div>
+    </AnimatePresence>
+  )
+}
+```
+
+#### `"popLayout"`
+
+Exiting elements are "popped" from page layout, allowing siblings to move immediately:
+
+```jsx
+<AnimatePresence mode="popLayout">
+  {items.map(item => (
+    <motion.div
+      key={item.id}
+      exit={{ opacity: 0, scale: 0.8 }}
+      layout
+    >
+      {item.name}
+    </motion.div>
+  ))}
+</AnimatePresence>
+```
+
+### `onExitComplete`
+
+Callback fired when all exiting elements have finished animating:
+
+```jsx
+<AnimatePresence
+  onExitComplete={() => console.log("All exits complete")}
+>
+  {items.map(item => (
+    <motion.div key={item.id} exit={{ opacity: 0 }} />
+  ))}
+</AnimatePresence>
+```
+
+### `custom`
+
+Pass dynamic data to exit animations:
+
+```jsx
+function Gallery() {
+  const [direction, setDirection] = useState(1)
+  const [index, setIndex] = useState(0)
+
+  const variants = {
+    enter: (direction) => ({
+      x: direction > 0 ? 1000 : -1000,
+      opacity: 0
+    }),
+    center: {
+      x: 0,
+      opacity: 1
+    },
+    exit: (direction) => ({
+      x: direction < 0 ? 1000 : -1000,
+      opacity: 0
+    })
+  }
+
+  return (
+    <AnimatePresence custom={direction} mode="wait">
+      <motion.img
+        key={index}
+        custom={direction}
+        variants={variants}
+        initial="enter"
+        animate="center"
+        exit="exit"
+      />
+    </AnimatePresence>
+  )
+}
+```
+
+### `presenceAffectsLayout`
+
+Control whether sibling elements re-render during exits (internal, defaults to `true`):
+
+```jsx
+<AnimatePresence presenceAffectsLayout={false">
+  {/* ... */}
+</AnimatePresence>
+```
+
+## Multiple Children
+
+When animating multiple children, **each must have a unique `key`**:
+
+```jsx
+<AnimatePresence>
+  {items.map(item => (
+    <motion.div
+      key={item.id}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      {item.name}
+    </motion.div>
+  ))}
+</AnimatePresence>
+```
+
+## Exit Variants
+
+Use variants to orchestrate complex exit animations:
+
+```jsx
+const listVariants = {
+  visible: {
+    opacity: 1,
+    transition: {
+      when: "beforeChildren",
+      staggerChildren: 0.1
+    }
+  },
+  hidden: {
+    opacity: 0,
+    transition: {
+      when: "afterChildren",
+      staggerChildren: 0.05,
+      staggerDirection: -1
+    }
+  }
+}
+
+const itemVariants = {
+  visible: { opacity: 1, y: 0 },
+  hidden: { opacity: 0, y: 20 }
+}
+
+function List({ items, isVisible }) {
+  return (
+    <AnimatePresence>
+      {isVisible && (
+        <motion.ul
+          key="list"
+          initial="hidden"
+          animate="visible"
+          exit="hidden"
+          variants={listVariants}
+        >
+          {items.map(item => (
+            <motion.li key={item} variants={itemVariants">
+              {item}
+            </motion.li>
+          ))}
+        </motion.ul>
+      )}
+    </AnimatePresence>
+  )
+}
+```
+
+## Nested AnimatePresence
+
+Use the `propagate` prop to propagate parent exit animations to nested children:
+
+```jsx
+<AnimatePresence initial={false">
+  {isVisible && (
+    <motion.div
+      key="parent"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <AnimatePresence propagate initial={false">
+        <motion.div
+          key="child"
+          exit={{ x: 100 }}
+          style={{ width: 50, height: 50, background: "blue" }}
+        >
+          Nested
+        </motion.div>
+      </AnimatePresence>
+    </motion.div>
+  )}
+</AnimatePresence>
+```
+
+## Common Patterns
+
+### Modal Dialog
+
+```jsx
+function Modal({ isOpen, onClose }) {
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div
+            key="backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            style={{
+              position: "fixed",
+              inset: 0,
+              backgroundColor: "rgba(0,0,0,0.5)"
+            }}
+          />
+          <motion.div
+            key="modal"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            style={{
+              position: "fixed",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              background: "white",
+              padding: 20
+            }}
+          >
+            Modal Content
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  )
+}
+```
+
+### Notification List
+
+```jsx
+function Notifications({ notifications }) {
+  return (
+    <div style={{ position: "fixed", top: 20, right: 20 }">
+      <AnimatePresence>
+        {notifications.map(notification => (
+          <motion.div
+            key={notification.id}
+            initial={{ opacity: 0, x: 100 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 100 }}
+            layout
+            style={{
+              background: "white",
+              padding: 16,
+              marginBottom: 8,
+              borderRadius: 4
+            }}
+          >
+            {notification.message}
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </div>
+  )
+}
+```
+
+### Route Transitions
+
+```jsx
+import { useLocation, Routes, Route } from "react-router-dom"
+
+function App() {
+  const location = useLocation()
+
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname">
+        <Route
+          path="/"
+          element={
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              Home
+            </motion.div>
+          }
+        />
+        <Route path="/about" element={<About />} />
+      </Routes>
+    </AnimatePresence>
+  )
+}
+```
+
+## Advanced: usePresence Hook
+
+For custom exit animations outside of motion components:
+
+```jsx
+import { usePresence } from "motion"
+import { useEffect } from "react"
+
+function Component() {
+  const [isPresent, safeToRemove] = usePresence()
+
+  useEffect(() => {
+    if (!isPresent) {
+      // Run custom exit animation
+      setTimeout(safeToRemove, 1000)
+    }
+  }, [isPresent, safeToRemove])
+
+  return <div>Custom exit logic</div>
+}
+```
+
+### useIsPresent
+
+Simpler hook that only returns presence state:
+
+```jsx
+import { useIsPresent } from "motion"
+
+function Component() {
+  const isPresent = useIsPresent()
+
+  return (
+    <div>
+      {isPresent ? "I'm here!" : "I'm leaving!"}
+    </div>
+  )
+}
+```
+
+## Important Notes
+
+1. **Keys are required** for AnimatePresence to track components
+2. **Direct children only** - AnimatePresence only tracks direct children
+3. **Exit animations** - Components need an `exit` prop to animate out
+4. **Conditional rendering** - Use conditional rendering, not `display: none`
+5. **Multiple children** - Each child needs a unique key when rendering lists

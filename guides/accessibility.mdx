@@ -1,0 +1,480 @@
+---
+title: Accessibility
+description: Make animations accessible with reduced motion and semantic HTML
+---
+
+Animations can enhance user experience, but they must be accessible to all users. Motion provides tools to respect user preferences and maintain semantic HTML.
+
+## Reduced Motion
+
+Many users prefer minimal or no animations due to:
+- Vestibular disorders
+- Motion sensitivity
+- Distraction or cognitive load
+- Battery conservation
+- Slow devices
+
+Motion automatically detects the `prefers-reduced-motion` system preference.
+
+## useReducedMotion Hook
+
+Respond to user preferences:
+
+```jsx
+import { motion, useReducedMotion } from "motion/react"
+
+export function AccessibleButton() {
+  const shouldReduceMotion = useReducedMotion()
+  
+  return (
+    <motion.button
+      whileHover={{ 
+        scale: shouldReduceMotion ? 1 : 1.1  // Skip scale for reduced motion
+      }}
+      whileTap={{
+        scale: shouldReduceMotion ? 1 : 0.95
+      }}
+      transition={{
+        duration: shouldReduceMotion ? 0 : 0.2  // Instant for reduced motion
+      }}
+    >
+      Click me
+    </motion.button>
+  )
+}
+```
+
+## Global Reduced Motion
+
+Apply reduced motion site-wide:
+
+```jsx
+import { MotionConfig, useReducedMotion } from "motion/react"
+
+export function App() {
+  const shouldReduceMotion = useReducedMotion()
+  
+  return (
+    <MotionConfig reducedMotion={shouldReduceMotion ? "always" : "never"">
+      {/* All animations respect this setting */}
+      <YourApp />
+    </MotionConfig>
+  )
+}
+```
+
+With `reducedMotion="always"`:
+- Spring animations become instant
+- Duration-based animations complete immediately
+- Layout animations still work but without transition
+
+## Implementation
+
+Motion tracks `prefers-reduced-motion` automatically. From `reduced-motion/index.ts:9-21`:
+
+```typescript
+export function initPrefersReducedMotion() {
+  hasReducedMotionListener.current = true
+  if (!isBrowser) return
+  
+  if (window.matchMedia) {
+    const motionMediaQuery = window.matchMedia("(prefers-reduced-motion)")
+    
+    const setReducedMotionPreferences = () =>
+      (prefersReducedMotion.current = motionMediaQuery.matches)
+    
+    motionMediaQuery.addEventListener("change", setReducedMotionPreferences)
+    setReducedMotionPreferences()
+  }
+}
+```
+
+The setting updates dynamically if the user changes their system preferences.
+
+## Semantic HTML
+
+Motion components render standard HTML elements:
+
+```jsx
+// ✅ Remains semantic
+<motion.button onClick={handleClick">
+  Submit
+</motion.button>
+
+// ✅ Maintains heading structure
+<motion.h1>Page Title</motion.h1>
+
+// ✅ Preserves link semantics
+<motion.a href="/about">About</motion.a>
+```
+
+Screen readers interpret Motion components as normal HTML.
+
+## ARIA Attributes
+
+Animation states should be communicated:
+
+```jsx
+import { motion, AnimatePresence } from "motion/react"
+import { useState } from "react"
+
+export function Modal() {
+  const [isOpen, setIsOpen] = useState(false)
+  
+  return (
+    <>
+      <button 
+        onClick={() => setIsOpen(true)}
+        aria-haspopup="dialog"
+      >
+        Open Modal
+      </button>
+      
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-title"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <h2 id="modal-title">Modal Title</h2>
+            <button onClick={() => setIsOpen(false)">
+              Close
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  )
+}
+```
+
+## Focus Management
+
+Maintain logical focus flow:
+
+```jsx
+import { motion } from "motion/react"
+import { useRef, useEffect } from "react"
+
+export function FocusedDrawer({ isOpen }) {
+  const firstFocusableRef = useRef(null)
+  
+  useEffect(() => {
+    if (isOpen && firstFocusableRef.current) {
+      firstFocusableRef.current.focus()
+    }
+  }, [isOpen])
+  
+  return (
+    <motion.div
+      initial={{ x: "-100%" }}
+      animate={{ x: isOpen ? 0 : "-100%" }}
+      style={{ position: "fixed" }}
+    >
+      <button ref={firstFocusableRef">
+        First focusable element
+      </button>
+      {/* Rest of drawer */}
+    </motion.div>
+  )
+}
+```
+
+## Keyboard Navigation
+
+Ensure interactive elements are keyboard accessible:
+
+```jsx
+import { motion } from "motion/react"
+import { useState } from "react"
+
+export function KeyboardCard() {
+  const [isExpanded, setIsExpanded] = useState(false)
+  
+  return (
+    <motion.div
+      layout
+      tabIndex={0}
+      role="button"
+      aria-expanded={isExpanded}
+      onClick={() => setIsExpanded(!isExpanded)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault()
+          setIsExpanded(!isExpanded)
+        }
+      }}
+      style={{
+        padding: 20,
+        cursor: "pointer"
+      }}
+    >
+      <h3>Card Title</h3>
+      {isExpanded && <p>Expanded content</p>}
+    </motion.div>
+  )
+}
+```
+
+## Drag Accessibility
+
+Draggable elements need keyboard alternatives:
+
+```jsx
+import { motion } from "motion/react"
+import { useState } from "react"
+
+export function AccessibleSlider() {
+  const [value, setValue] = useState(50)
+  
+  const handleKeyDown = (e) => {
+    if (e.key === "ArrowRight") {
+      setValue(v => Math.min(100, v + 1))
+    } else if (e.key === "ArrowLeft") {
+      setValue(v => Math.max(0, v - 1))
+    }
+  }
+  
+  return (
+    <div>
+      <motion.div
+        drag="x"
+        dragConstraints={{ left: 0, right: 200 }}
+        dragElastic={0}
+        onDrag={(e, info) => setValue((info.point.x / 200) * 100)}
+        tabIndex={0}
+        role="slider"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(value)}
+        onKeyDown={handleKeyDown}
+        style={{
+          width: 20,
+          height: 20,
+          borderRadius: "50%",
+          background: "#0070f3",
+          x: (value / 100) * 200
+        }}
+      />
+      <span aria-live="polite">Value: {Math.round(value)}</span>
+    </div>
+  )
+}
+```
+
+## Live Regions
+
+Announce dynamic content changes:
+
+```jsx
+import { motion, AnimatePresence } from "motion/react"
+import { useState } from "react"
+
+export function Notifications() {
+  const [notifications, setNotifications] = useState([])
+  
+  return (
+    <div 
+      role="status" 
+      aria-live="polite"
+      aria-atomic="true"
+    >
+      <AnimatePresence>
+        {notifications.map(notification => (
+          <motion.div
+            key={notification.id}
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, x: 100 }}
+          >
+            {notification.message}
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </div>
+  )
+}
+```
+
+## Animation Duration Guidelines
+
+Follow WCAG duration recommendations:
+
+```jsx
+const durations = {
+  // Micro-interactions (hovers, taps)
+  instant: 0,
+  fast: 0.15,
+  normal: 0.3,
+  
+  // Page transitions
+  slow: 0.5,
+  slower: 0.8,
+  
+  // Never exceed 1s for essential interactions
+  max: 1.0
+}
+
+<motion.button
+  whileHover={{ scale: 1.05 }}
+  transition={{ duration: durations.fast }}  // Quick feedback
+/>
+
+<motion.div
+  initial={{ opacity: 0 }}
+  animate={{ opacity: 1 }}
+  transition={{ duration: durations.normal }}  // Page element
+/>
+```
+
+## Color and Contrast
+
+Ensure animated elements maintain contrast:
+
+```jsx
+import { motion } from "motion/react"
+
+// ❌ May fail contrast during animation
+<motion.div
+  animate={{ backgroundColor: ["#fff", "#eee", "#ddd"] }}
+  style={{ color: "#aaa" }}  // May not be readable
+/>
+
+// ✅ Maintains readable contrast
+<motion.div
+  animate={{ backgroundColor: ["#fff", "#f5f5f5", "#fff"] }}
+  style={{ color: "#333" }}  // Always readable
+/>
+```
+
+## Testing Accessibility
+
+### Manual Testing
+
+1. **Keyboard only** - Navigate without mouse
+2. **Screen reader** - Test with VoiceOver/NVDA/JAWS
+3. **Reduced motion** - Enable in system preferences
+4. **High contrast** - Test in high contrast mode
+5. **Zoom** - Test at 200% zoom
+
+### Automated Testing
+
+```jsx
+import { render } from "@testing-library/react"
+import { axe, toHaveNoViolations } from "jest-axe"
+
+expect.extend(toHaveNoViolations)
+
+test("accessible animation", async () => {
+  const { container } = render(<AnimatedComponent />)
+  const results = await axe(container)
+  expect(results).toHaveNoViolations()
+})
+```
+
+## Best Practices
+
+<Steps>
+  <Step title="Respect reduced motion">
+    Always check `useReducedMotion()` for important animations
+  </Step>
+  
+  <Step title="Keep durations short">
+    Essential interactions should complete within 300ms
+  </Step>
+  
+  <Step title="Maintain semantics">
+    Use appropriate HTML elements and ARIA roles
+  </Step>
+  
+  <Step title="Enable keyboard control">
+    All interactive animations need keyboard alternatives
+  </Step>
+  
+  <Step title="Announce changes">
+    Use live regions for dynamic content updates
+  </Step>
+  
+  <Step title="Test with users">
+    Get feedback from people who use assistive technology
+  </Step>
+</Steps>
+
+## Reduced Motion Strategies
+
+### Crossfade Instead of Slide
+
+```jsx
+const shouldReduceMotion = useReducedMotion()
+
+<motion.div
+  initial={shouldReduceMotion 
+    ? { opacity: 0 }  // Simple fade
+    : { opacity: 0, x: -20 }  // Slide + fade
+  }
+  animate={{ opacity: 1, x: 0 }}
+  transition={{ duration: shouldReduceMotion ? 0.1 : 0.3 }}
+/>
+```
+
+### Simplify Complex Animations
+
+```jsx
+const shouldReduceMotion = useReducedMotion()
+
+<motion.div
+  animate={shouldReduceMotion
+    ? { opacity: 1 }  // Minimal
+    : {
+        opacity: 1,
+        scale: [0.8, 1.1, 1],
+        rotate: [0, 5, 0]
+      }  // Complex
+  }
+/>
+```
+
+### Maintain Feedback
+
+Even with reduced motion, provide visual feedback:
+
+```jsx
+const shouldReduceMotion = useReducedMotion()
+
+<motion.button
+  whileTap={shouldReduceMotion
+    ? { opacity: 0.7 }  // Instant opacity change
+    : { scale: 0.95 }   // Scale animation
+  }
+  transition={{ duration: shouldReduceMotion ? 0 : 0.1 }}
+>
+  Click me
+</motion.button>
+```
+
+## Resources
+
+- [WCAG 2.1 Animation Guidelines](https://www.w3.org/WAI/WCAG21/Understanding/animation-from-interactions)
+- [prefers-reduced-motion MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-reduced-motion)
+- [Accessible Animation Guide](https://www.a11y-101.com/design/animations)
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Performance" icon="gauge-high" href="/guides/performance">
+    Optimize for all devices
+  </Card>
+  <Card title="Spring Animations" icon="wave-pulse" href="/guides/spring-animations">
+    Create natural motion
+  </Card>
+  <Card title="Drag Interactions" icon="hand" href="/guides/drag-interactions">
+    Add accessible gestures
+  </Card>
+  <Card title="Layout Transitions" icon="arrows-maximize" href="/guides/layout-transitions">
+    Smooth layout changes
+  </Card>
+</CardGroup>

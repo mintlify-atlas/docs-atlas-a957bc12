@@ -1,0 +1,234 @@
+---
+title: 'Pan'
+description: 'Pan gesture props and event handlers'
+icon: 'hand-back-fist'
+---
+
+## Overview
+
+The pan gesture recognizes pointer movement across the screen. Unlike drag, pan doesn't move the element but provides detailed information about the pointer movement for custom implementations.
+
+**Note:** For pan gestures to work correctly with touch input, the element needs touch scrolling to be disabled on either x/y or both axes with the `touch-action` CSS rule.
+
+```css
+.pan-element {
+  touch-action: none; /* Disable touch scrolling */
+}
+```
+
+## Event Handlers
+
+### onPan
+
+Callback function that fires when the pan gesture is recognized on this element.
+
+```tsx
+type onPan = (event: PointerEvent, info: PanInfo) => void
+
+interface PanInfo {
+  point: { x: number; y: number }
+  delta: { x: number; y: number }
+  offset: { x: number; y: number }
+  velocity: { x: number; y: number }
+}
+```
+
+- `point`: Relative to the device or page
+- `delta`: Distance moved since the last event
+- `offset`: Offset from the original pan event
+- `velocity`: Current velocity of the pointer (in px/ms)
+
+```jsx
+function onPan(event, info) {
+  console.log(info.point.x, info.point.y)
+  console.log(info.delta.x, info.delta.y)
+  console.log(info.offset.x, info.offset.y)
+  console.log(info.velocity.x, info.velocity.y)
+}
+
+<motion.div onPan={onPan} />
+```
+
+### onPanStart
+
+Callback function that fires when the pan gesture begins on this element.
+
+```tsx
+type onPanStart = (event: PointerEvent, info: PanInfo) => void
+```
+
+```jsx
+function onPanStart(event, info) {
+  console.log('Pan started at', info.point.x, info.point.y)
+}
+
+<motion.div onPanStart={onPanStart} />
+```
+
+### onPanEnd
+
+Callback function that fires when the pan gesture ends on this element.
+
+```tsx
+type onPanEnd = (event: PointerEvent, info: PanInfo) => void
+```
+
+```jsx
+function onPanEnd(event, info) {
+  console.log('Final velocity:', info.velocity.x, info.velocity.y)
+}
+
+<motion.div onPanEnd={onPanEnd} />
+```
+
+### onPanSessionStart
+
+Callback function that fires when we begin detecting a pan gesture. This is analogous to `onMouseStart` or `onTouchStart`.
+
+```tsx
+type onPanSessionStart = (event: PointerEvent, info: EventInfo) => void
+
+interface EventInfo {
+  point: { x: number; y: number }
+}
+```
+
+```jsx
+function onPanSessionStart(event, info) {
+  console.log('Session started at', info.point)
+}
+
+<motion.div onPanSessionStart={onPanSessionStart} />
+```
+
+## Examples
+
+### Custom slider
+
+```jsx
+function Slider() {
+  const [value, setValue] = useState(0)
+  const constraintsRef = useRef(null)
+
+  return (
+    <div
+      ref={constraintsRef}
+      style={{
+        width: '300px',
+        height: '4px',
+        backgroundColor: '#e0e0e0',
+        position: 'relative'
+      }}
+    >
+      <motion.div
+        onPan={(event, info) => {
+          const percentage = (info.point.x / 300) * 100
+          setValue(Math.max(0, Math.min(100, percentage)))
+        }}
+        style={{
+          width: '20px',
+          height: '20px',
+          borderRadius: '50%',
+          backgroundColor: '#007bff',
+          position: 'absolute',
+          top: '-8px',
+          left: `${value}%`,
+          touchAction: 'none'
+        }}
+      />
+    </div>
+  )
+}
+```
+
+### Track swipe velocity
+
+```jsx
+function SwipeDetector() {
+  const handlePanEnd = (event, info) => {
+    const swipeThreshold = 0.5 // px/ms
+    
+    if (Math.abs(info.velocity.x) > swipeThreshold) {
+      if (info.velocity.x > 0) {
+        console.log('Swiped right')
+      } else {
+        console.log('Swiped left')
+      }
+    }
+  }
+
+  return (
+    <motion.div
+      onPanEnd={handlePanEnd}
+      style={{ touchAction: 'pan-y' }} // Allow vertical scroll
+    >
+      Swipe left or right
+    </motion.div>
+  )
+}
+```
+
+### Pan-based drawing
+
+```jsx
+function DrawingCanvas() {
+  const [path, setPath] = useState([])
+
+  return (
+    <svg width="400" height="400">
+      <motion.path
+        d={path.join(' ')}
+        stroke="black"
+        fill="none"
+        strokeWidth="2"
+      />
+      <motion.rect
+        width="400"
+        height="400"
+        fill="transparent"
+        onPanSessionStart={(event, info) => {
+          setPath([`M ${info.point.x} ${info.point.y}`])
+        }}
+        onPan={(event, info) => {
+          setPath(prev => [...prev, `L ${info.point.x} ${info.point.y}`])
+        }}
+        style={{ touchAction: 'none' }}
+      />
+    </svg>
+  )
+}
+```
+
+## PanInfo Properties
+
+### point
+
+Contains `x` and `y` values for the current pan position relative to the device or page.
+
+```tsx
+point: { x: number; y: number }
+```
+
+### delta
+
+Contains `x` and `y` values for the distance moved since the last event.
+
+```tsx
+delta: { x: number; y: number }
+```
+
+### offset
+
+Contains `x` and `y` values for the distance moved from the first pan event.
+
+```tsx
+offset: { x: number; y: number }
+```
+
+### velocity
+
+Contains `x` and `y` values for the current velocity of the pointer, in px/ms.
+
+```tsx
+velocity: { x: number; y: number }
+```
